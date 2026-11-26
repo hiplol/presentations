@@ -17,11 +17,11 @@ html, body {
 }
 a { color: var(--accent); text-decoration: none; }
 .topbar {
-  display: flex; align-items: center; gap: 12px; padding: 14px 22px;
+  display: flex; align-items: center; gap: 8px; padding: 14px 22px;
   background: var(--bg2); border-bottom: 1px solid var(--line);
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: 0; z-index: 50; flex-wrap: wrap;
 }
-.topbar h1 { font-size: 18px; margin: 0; flex: 1; font-weight: 600; text-align: center; }
+.topbar h1 { font-size: 18px; margin: 0; flex: 1; font-weight: 600; text-align: center; min-width: 120px; }
 .back { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 14px; }
 main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 
@@ -114,17 +114,23 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 
 /* Viewer */
-.viewer-page { user-select: none; -webkit-user-select: none; }
+.viewer-page { 
+  user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+}
+/* Полное уничтожение визуального выделения */
+.viewer-page ::selection { background: transparent; color: inherit; }
+.viewer-page ::-moz-selection { background: transparent; color: inherit; }
+
 .render-area { 
   display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; 
-  transition: filter 0.1s ease-out; /* Очень быстрое размытие */
+  transition: filter 0.2s ease-out;
 }
 .pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; -webkit-user-drag: none; }
 
 /* Watermark */
 .watermark-layer {
   position: fixed; inset: 0; pointer-events: none;
-  background-repeat: repeat; z-index: 9999; /* Поверх всего */
+  background-repeat: repeat; z-index: 9999;
 }
 
 /* Modals */
@@ -149,22 +155,26 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
   body * { display: none !important; }
   body::before { content: "Printing is disabled"; display: block !important; color: #000; padding: 40px; font-size: 24px; }
 }
+
+@media (max-width: 500px) {
+  .topbar { justify-content: center; padding: 10px; }
+  .topbar h1 { width: 100%; text-align: center; order: -1; margin-bottom: 8px; }
+  .btn { font-size: 12px; padding: 8px 12px; }
+}
 </style>
 </head>
 <body>
 <header class="topbar">
   <button id="back-btn" class="back hidden">← Back</button>
   <h1 id="page-title">Presentations</h1>
-  <button id="admin-btn" class="btn ghost">Admin</button>
+  <button id="admin-btn" class="btn ghost hidden">Admin</button>
   <button id="voucher-btn" class="btn ghost hidden" style="margin-right: 8px;">Redeem voucher</button>
   <button id="request-btn" class="btn ghost hidden">Request copy</button>
 </header>
 
 <main>
-  <!-- GRID VIEW -->
   <section id="grid-view"><div id="grid" class="grid"></div></section>
 
-  <!-- VIEWER VIEW -->
   <section id="viewer-view" class="hidden viewer-page">
     <div id="lock-screen" class="lock-screen hidden">
       <h2>🔒 Locked</h2>
@@ -176,9 +186,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
     <div id="render-area" class="render-area"></div>
   </section>
 
-  <!-- ADMIN VIEW -->
   <section id="admin-view" class="hidden">
-    <!-- ADMIN LOGIN -->
     <div id="admin-login" class="lock-screen">
       <h2>Admin Setup</h2>
       <p>
@@ -190,7 +198,6 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
       <p id="pat-status" class="error" style="text-align:center"></p>
     </div>
 
-    <!-- ADMIN PANEL -->
     <div id="admin-panel" class="hidden">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2>Add presentation</h2>
@@ -254,7 +261,6 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
   </section>
 </main>
 
-<!-- OVERLAYS -->
 <div id="watermark-layer" class="watermark-layer hidden"></div>
 
 <div id="modal" class="modal hidden">
@@ -297,7 +303,11 @@ const DATA_URL = `https://cdn.jsdelivr.net/gh/${CONFIG.owner}/${CONFIG.repo}@${C
 
 document.title = CONFIG.siteTitle;
 document.getElementById('page-title').textContent = CONFIG.siteTitle;
+
 document.getElementById('admin-btn').onclick = () => location.hash = '#admin';
+if (location.hash === '#admin') {
+  document.getElementById('admin-btn').classList.remove('hidden');
+}
 
 // ================= CRYPTO =================
 const Crypto = (() => {
@@ -414,7 +424,10 @@ route();
 async function route() {
   const h = location.hash;
   if (h.startsWith('#v/')) await showViewer(decodeURIComponent(h.slice(3)));
-  else if (h === '#admin') await showAdmin();
+  else if (h === '#admin') {
+    document.getElementById('admin-btn').classList.remove('hidden');
+    await showAdmin();
+  }
   else await showGrid();
 }
 
@@ -537,6 +550,7 @@ async function buildWatermark() {
 
   let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">`;
   
+  // ВОЗВРАЩАЕМ ПЛОТНОСТЬ 60 ЭЛЕМЕНТОВ
   for (let i = 0; i < 60; i++) {
     const x = Math.random() * 1000;
     const y = Math.random() * 1000;
@@ -608,7 +622,19 @@ async function renderSlides(password) {
 async function renderPdf(bytes) {
   if (!window.pdfjsLib) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  
+  // ФИКС ОШИБКИ WORKER (Blob локально)
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    try {
+      const workerRes = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
+      const workerText = await workerRes.text();
+      const workerBlob = new Blob([workerText], { type: 'application/javascript' });
+      pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(workerBlob);
+    } catch (e) {
+      console.warn("Blob worker failed, trying direct URL", e);
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
   }
 
   try {
@@ -640,8 +666,8 @@ function viewerActive() {
   return v && !v.classList.contains('hidden');
 }
 
-// 1. Блокировка контекстного меню, копирования, выделения
-['contextmenu','copy','cut','dragstart','selectstart'].forEach(ev =>
+// 1. Блокировка контекстного меню, копирования, выделения и перетаскивания
+['contextmenu','copy','cut','dragstart','selectstart', 'drop'].forEach(ev =>
   document.addEventListener(ev, e => {
     if (!viewerActive()) return;
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
@@ -656,7 +682,7 @@ document.addEventListener('paste', e => {
   e.preventDefault();
 });
 
-// 3. Блокировка горячих клавиш (включая Ctrl+S, PrintScreen, DevTools, Ctrl+Scroll)
+// 3. Блокировка горячих клавиш (включая Ctrl+S, PrintScreen, DevTools, Mac Screenshots)
 document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
@@ -672,11 +698,15 @@ document.addEventListener('keydown', e => {
       return false;
   }
 
-  // PrintScreen
-  if (e.key === 'PrintScreen' || e.keyCode === 44) {
+  // PrintScreen и Mac скриншоты (Cmd+Shift+3/4/5)
+  if (
+      e.key === 'PrintScreen' || 
+      e.keyCode === 44 ||
+      (e.metaKey && e.shiftKey && ['3','4','5'].includes(e.key))
+  ) {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(""); // Стираем буфер обмена
+            navigator.clipboard.writeText(""); // Очищаем буфер
         }
       } catch (err) {}
       e.preventDefault();
@@ -688,22 +718,22 @@ document.addEventListener('keydown', e => {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
     
-    // Агрессивная защита от сохранения и печати: стираем всё и редиректим
+    // Уничтожение контента при сохранении/печати
     if (k === 's' || k === 'p') {
         alert('Сохранение и печать отключены.');
         document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Сохранение отключено.</div>';
-        setTimeout(() => location.hash = '', 1000); // Выкидываем на главную
+        setTimeout(() => location.hash = '', 1000);
     }
   }
 });
 
-// Защита от масштабирования (Ctrl + колесико), чтобы нельзя было отдалить
+// Защита от масштабирования (Ctrl + колесико)
 document.addEventListener('wheel', e => {
     if (!viewerActive()) return;
     if (e.ctrlKey) e.preventDefault();
 }, { passive: false });
 
-// 4. МГНОВЕННОЕ размытие при выходе мыши за пределы страницы ИЛИ потере фокуса
+// 4. МГНОВЕННОЕ размытие
 function applyBlur() {
     const area = document.getElementById('render-area');
     if (area) area.style.filter = 'blur(40px)';
@@ -715,7 +745,6 @@ function removeBlur() {
     }
 }
 
-// Потеря фокуса окна
 window.addEventListener('blur', applyBlur);
 window.addEventListener('focus', removeBlur);
 document.addEventListener('visibilitychange', () => {
@@ -723,18 +752,28 @@ document.addEventListener('visibilitychange', () => {
     else removeBlur();
 });
 
-// Выход мыши за пределы окна (на панель задач, за границы браузера)
 document.documentElement.addEventListener('mouseleave', applyBlur);
 document.documentElement.addEventListener('mouseenter', removeBlur);
 
-// Постоянная проверка (на всякий случай)
+// 5. Таймер бездействия (5 секунд без движения мыши/клавиатуры -> размытие)
+let idleTimer;
+function resetIdleTimer() {
+    if (!viewerActive()) return;
+    removeBlur();
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(applyBlur, 5000); // 5 секунд
+}
+window.addEventListener('mousemove', resetIdleTimer);
+window.addEventListener('keydown', resetIdleTimer);
+window.addEventListener('scroll', resetIdleTimer);
+
 setInterval(() => {
     if (viewerActive() && !document.hasFocus()) {
         applyBlur();
     }
 }, 500);
 
-// 5. Уничтожение контента при печати
+// 6. Уничтожение контента при печати (обход через меню браузера)
 window.addEventListener('beforeprint', () => {
   if (viewerActive()) {
     const area = document.getElementById('render-area');
@@ -750,7 +789,7 @@ window.addEventListener('afterprint', () => {
   }
 });
 
-// 6. Защита от извлечения Canvas (если кто-то откроет консоль и попробует сохранить)
+// 7. Защита от извлечения Canvas
 const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
 HTMLCanvasElement.prototype.toDataURL = function() {
     if (viewerActive()) return ''; 
@@ -763,7 +802,7 @@ CanvasRenderingContext2D.prototype.getImageData = function() {
     return originalGetImageData.apply(this, arguments);
 };
 
-// 7. Anti-DevTools (Debugger loop) - если откроют консоль, сайт сотрет себя
+// 8. Anti-DevTools (Debugger loop)
 setInterval(() => {
     if (viewerActive()) {
         const start = performance.now();
@@ -775,6 +814,16 @@ setInterval(() => {
         }
     }
 }, 1000);
+
+// 9. MutationObserver (Защита от удаления водяных знаков через код)
+const observer = new MutationObserver((mutations) => {
+    if (!viewerActive()) return;
+    const wm = document.getElementById('watermark-layer');
+    if (!wm || wm.classList.contains('hidden') || wm.style.display === 'none') {
+        location.reload(); // Перезагрузка, если кто-то удалил слой
+    }
+});
+observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
 
 
 // ================= PASSWORD =================
@@ -1332,4 +1381,3 @@ document.getElementById('voucher-issue').onclick = async () => {
 </script>
 </body>
 </html>
-
