@@ -117,7 +117,6 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 .viewer-page { 
   user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
 }
-/* Полное уничтожение визуального выделения */
 .viewer-page ::selection { background: transparent; color: inherit; }
 .viewer-page ::-moz-selection { background: transparent; color: inherit; }
 
@@ -444,6 +443,7 @@ async function showGrid() {
   document.getElementById('page-title').textContent = CONFIG.siteTitle;
   document.title = CONFIG.siteTitle;
   CURRENT = null;
+  watermarkReady = false; // Отключаем проверку водяных знаков
 
   await loadData();
   const grid = document.getElementById('grid');
@@ -515,6 +515,7 @@ async function showViewer(pid) {
 
   await buildWatermark();
   document.getElementById('watermark-layer').classList.remove('hidden');
+  watermarkReady = true; // Включаем проверку водяных знаков
 
   if (CURRENT.locked) {
     document.getElementById('lock-screen').classList.remove('hidden');
@@ -550,7 +551,7 @@ async function buildWatermark() {
 
   let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">`;
   
-  // ВОЗВРАЩАЕМ ПЛОТНОСТЬ 60 ЭЛЕМЕНТОВ
+  // ПЛОТНОСТЬ 60 ЭЛЕМЕНТОВ
   for (let i = 0; i < 60; i++) {
     const x = Math.random() * 1000;
     const y = Math.random() * 1000;
@@ -661,6 +662,8 @@ async function renderPdf(bytes) {
 
 // ================= EXTREME PROTECTION =================
 
+let watermarkReady = false; // Флаг для безопасной проверки
+
 function viewerActive() {
   const v = document.getElementById('viewer-view');
   return v && !v.classList.contains('hidden');
@@ -698,7 +701,7 @@ document.addEventListener('keydown', e => {
       return false;
   }
 
-  // PrintScreen и Mac скриншоты (Cmd+Shift+3/4/5)
+  // PrintScreen и Mac скриншоты
   if (
       e.key === 'PrintScreen' || 
       e.keyCode === 44 ||
@@ -773,7 +776,7 @@ setInterval(() => {
     }
 }, 500);
 
-// 6. Уничтожение контента при печати (обход через меню браузера)
+// 6. Уничтожение контента при печати
 window.addEventListener('beforeprint', () => {
   if (viewerActive()) {
     const area = document.getElementById('render-area');
@@ -815,15 +818,15 @@ setInterval(() => {
     }
 }, 1000);
 
-// 9. MutationObserver (Защита от удаления водяных знаков через код)
-const observer = new MutationObserver((mutations) => {
-    if (!viewerActive()) return;
-    const wm = document.getElementById('watermark-layer');
-    if (!wm || wm.classList.contains('hidden') || wm.style.display === 'none') {
-        location.reload(); // Перезагрузка, если кто-то удалил слой
+// 9. Безопасная защита от удаления водяных знаков (вызывается раз в секунду)
+setInterval(() => {
+    if (viewerActive() && watermarkReady) {
+        const wm = document.getElementById('watermark-layer');
+        if (!wm || wm.classList.contains('hidden') || wm.style.display === 'none') {
+            location.reload();
+        }
     }
-});
-observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+}, 1000);
 
 
 // ================= PASSWORD =================
@@ -921,6 +924,7 @@ async function showAdmin() {
   document.getElementById('request-btn').classList.add('hidden');
   document.getElementById('page-title').textContent = 'Admin';
   document.title = 'Admin';
+  watermarkReady = false; // Отключаем проверку
 
   const token = localStorage.getItem('gh_token');
   if (token) {
