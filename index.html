@@ -111,8 +111,6 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 .viewer-page { user-select: none; -webkit-user-select: none; }
 .render-area { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; }
 .pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; }
-.ppt-render { max-width: 960px; width: 100%; background: #fff; border-radius: 6px;
-  overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.4); pointer-events: none; }
 
 /* Watermark */
 .watermark-layer {
@@ -194,10 +192,10 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
       <label>Master password (wrap voucher keys; keep it safe)</label>
       <input id="master-pw" type="password" placeholder="Enter master password">
 
-      <label>Drop .pptx (required) and .pdf (optional, better view quality)</label>
+      <label>Drop .pptx (we'll convert it to PDF for viewing automatically)</label>
       <div id="dropzone" class="dropzone">
-        <p>Drop files here or click to select</p>
-        <input id="file-input" type="file" multiple accept=".pptx,.pdf" hidden>
+        <p>Drop .pptx here or click to select</p>
+        <input id="file-input" type="file" accept=".pptx" hidden>
       </div>
       <div id="file-list" class="file-list"></div>
 
@@ -449,18 +447,14 @@ function loadScript(src) {
     document.head.appendChild(s);
   });
 }
-function loadCss(href) {
-  return new Promise(res => {
-    const l = document.createElement('link');
-    l.rel = 'stylesheet'; l.href = href; l.onload = res;
-    document.head.appendChild(l);
-  });
-}
 
 async function renderSlides(password) {
-  const usePdf = !!CURRENT.pdf;
-  const meta = usePdf ? CURRENT.pdf : CURRENT.pptxView;
+  const meta = CURRENT.pdf; // Всегда используем PDF для просмотра
   
+  if (!meta) {
+      throw new Error('No PDF file found for viewing. Please re-upload the presentation.');
+  }
+
   const r = await fetch(RAW + meta.file + '?t=' + Date.now(), { cache: 'no-store' });
   if (!r.ok) throw new Error('Failed to download presentation file from GitHub. Check if the file exists.');
   
@@ -478,13 +472,11 @@ async function renderSlides(password) {
   area.innerHTML = '<p class="muted" style="text-align:center; margin-top:20px;">Rendering slides, please wait...</p>';
   
   try {
-    if (usePdf) await renderPdf(buf);
-    else await renderPptx(buf);
+    await renderPdf(buf);
   } catch (e) {
     area.innerHTML = `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">
-      ❌ Failed to render slides.<br><br>
-      <span style="font-size:14px; color:#ccc">${esc(e.message)}</span><br><br>
-      <span style="font-size:13px; color:#8ca38a">Tip: If this is a .pptx file, export it to PDF using PowerPoint (File → Export → PDF) and upload both files next time. PDF renders much better in browsers.</span>
+      ❌ Failed to render PDF.<br><br>
+      <span style="font-size:14px; color:#ccc">${esc(e.message)}</span>
     </p>`;
   }
 }
@@ -517,51 +509,6 @@ async function renderPdf(bytes) {
   }
 }
 
-async function renderPptx(bytes) {
-  if (!window.jQuery) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js');
-  if (!window.JSZip) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
-  if (!window.pptxToHtml) {
-    await loadCss('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/css/pptxjs.css');
-    await loadScript('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/divs2slides.js');
-    await loadScript('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/pptxjs.js');
-  }
-  
-  try {
-    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
-    const url = URL.createObjectURL(blob);
-    const area = document.getElementById('render-area');
-    area.innerHTML = '';
-    
-    const box = document.createElement('div');
-    box.className = 'ppt-render'; box.id = 'ppt-box';
-    box.style.minHeight = '400px';
-    area.appendChild(box);
-    
-    await new Promise((resolve, reject) => {
-      let isDone = false;
-      $('#ppt-box').pptxToHtml({
-        pptxFileUrl: url, 
-        slideMode: false, 
-        keyBoardShortCut: false,
-        slideModeConfig: { 
-          on: () => { if(!isDone) { isDone = true; resolve(); } }
-        }
-      });
-      // Fallback, если библиотека молчит
-      setTimeout(() => {
-        if(!isDone) { isDone = true; resolve(); }
-      }, 8000);
-    });
-    
-    // Проверяем, отрисовалось ли хоть что-то
-    if (document.getElementById('ppt-box').innerHTML.trim() === '') {
-       throw new Error('PPTX.js could not parse this file (empty output). Complex formatting is not supported.');
-    }
-  } catch (e) {
-    throw new Error('PPTX rendering failed: ' + e.message);
-  }
-}
-
 // ================= PROTECTION =================
 ['contextmenu','copy','cut','dragstart','selectstart'].forEach(ev =>
   document.addEventListener(ev, e => {
@@ -574,7 +521,7 @@ document.addEventListener('paste', e => {
   e.preventDefault();
 });
 document.addEventListener('keydown', e => {
-  const k = (e.key || '').toLowerCase(); // ИСПРАВЛЕНО: защита от undefined
+  const k = (e.key || '').toLowerCase();
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
@@ -709,7 +656,7 @@ document.getElementById('logout-btn').onclick = () => {
 };
 
 // --- Dropzone ---
-let adminFiles = { pptx: null, pdf: null };
+let adminFile = null;
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
 dropzone.onclick = () => fileInput.click();
@@ -719,17 +666,18 @@ dropzone.ondrop = e => { e.preventDefault(); dropzone.classList.remove('dragover
 fileInput.onchange = e => pick(e.target.files);
 
 function pick(files) {
-  adminFiles = { pptx: null, pdf: null };
+  adminFile = null;
   for (const f of files) {
-    if (f.name.toLowerCase().endsWith('.pptx')) adminFiles.pptx = f;
-    else if (f.name.toLowerCase().endsWith('.pdf')) adminFiles.pdf = f;
+    if (f.name.toLowerCase().endsWith('.pptx')) {
+      adminFile = f;
+      break;
+    }
   }
   const items = [];
-  if (adminFiles.pptx) items.push(`📊 ${adminFiles.pptx.name} (${(adminFiles.pptx.size/1024/1024).toFixed(1)} MB)`);
-  if (adminFiles.pdf) items.push(`📄 ${adminFiles.pdf.name} (${(adminFiles.pdf.size/1024/1024).toFixed(1)} MB)`);
-  document.getElementById('file-list').innerHTML = items.join('<br>') || 'No files selected';
+  if (adminFile) items.push(`📊 ${adminFile.name} (${(adminFile.size/1024/1024).toFixed(1)} MB)`);
+  document.getElementById('file-list').innerHTML = items.join('<br>') || 'No .pptx file selected';
   const t = document.getElementById('f-title');
-  if (adminFiles.pptx && !t.value) t.value = adminFiles.pptx.name.replace(/\.pptx$/i, '');
+  if (adminFile && !t.value) t.value = adminFile.name.replace(/\.pptx$/i, '');
 }
 
 function logLine(msg, type='') {
@@ -797,6 +745,30 @@ async function commitFiles(files, message) {
   return newCommit.sha;
 }
 
+// ================= CONVERT PPTX TO PDF =================
+async function convertPptxToPdf(file) {
+    logLine('[*] Loading conversion library (this may take a few seconds)...');
+    if (!window.Ream) {
+        // Ream is available as a UMD module on unpkg/jsdelivr
+        await loadScript('https://cdn.jsdelivr.net/npm/reamkit/dist/ream.umd.js');
+    }
+    
+    logLine('[*] Converting PPTX to PDF (this may take a minute for large files)...');
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    try {
+        // Ream's API: parse the file, then convert to PDF
+        const doc = Ream.parse(bytes);
+        const pdfBytes = await doc.convert('pdf');
+        logLine('[✓] Conversion successful.', 'success');
+        return new Uint8Array(pdfBytes);
+    } catch (error) {
+        logLine('[!] Conversion failed: ' + error.message, 'fail');
+        throw new Error('Auto-conversion to PDF failed. Please try again or upload a PDF manually.');
+    }
+}
+
 // ================= ADD PRESENTATION =================
 document.getElementById('upload-btn').onclick = async () => {
   const log = document.getElementById('log');
@@ -814,51 +786,45 @@ document.getElementById('upload-btn').onclick = async () => {
 
     if (!master) throw new Error('Master password required');
     if (!title) throw new Error('Title required');
-    if (!adminFiles.pptx) throw new Error('.pptx file is required (needed to generate vouchers)');
+    if (!adminFile) throw new Error('.pptx file is required');
 
     const id = rand(5);
     const dir = `presentations/${id}`;
     const entries = [];
 
-    logLine(`[*] Reading ${adminFiles.pptx.name}…`);
-    const pptxBytes = new Uint8Array(await adminFiles.pptx.arrayBuffer());
+    // 1. Read PPTX bytes
+    logLine(`[*] Reading ${adminFile.name}…`);
+    const pptxBytes = new Uint8Array(await adminFile.arrayBuffer());
     if (pptxBytes.length > 85 * 1024 * 1024) {
       logLine(`[!] Warning: file is very large. GitHub might reject files > 100MB.`, 'fail');
     }
 
+    // 2. Convert to PDF (for viewing)
+    const pdfBytes = await convertPptxToPdf(adminFile);
+
+    // 3. Encrypt and prepare files
     const presSalt = crypto.getRandomValues(new Uint8Array(16));
     const kek = await Crypto.deriveRaw(master, presSalt);
-    const srcIv = crypto.getRandomValues(new Uint8Array(12));
     
+    // Encrypt source PPTX
     logLine('[*] Encrypting source.pptx…');
+    const srcIv = crypto.getRandomValues(new Uint8Array(12));
     entries.push({ path: `${dir}/source.pptx.enc`, data: await Crypto.encRaw(pptxBytes, kek, srcIv) });
 
-    let pdfMeta = null, pptxMeta = null;
-    if (adminFiles.pdf) {
-      logLine(`[*] Reading ${adminFiles.pdf.name}…`);
-      const pdfBytes = new Uint8Array(await adminFiles.pdf.arrayBuffer());
-      if (viewPw) {
-        const s = crypto.getRandomValues(new Uint8Array(16));
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        entries.push({ path: `${dir}/slides.pdf.enc`, data: await Crypto.encPw(pdfBytes, viewPw, s, iv) });
-        pdfMeta = { file: `${dir}/slides.pdf.enc`, encrypted: true, salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
-      } else {
-        entries.push({ path: `${dir}/slides.pdf`, data: pdfBytes });
-        pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
-      }
+    // Encrypt viewable PDF
+    let pdfMeta = null;
+    logLine('[*] Encrypting slides.pdf for viewing…');
+    if (viewPw) {
+      const s = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      entries.push({ path: `${dir}/slides.pdf.enc`, data: await Crypto.encPw(pdfBytes, viewPw, s, iv) });
+      pdfMeta = { file: `${dir}/slides.pdf.enc`, encrypted: true, salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
     } else {
-      logLine('[*] Encrypting slides.pptx for viewing…');
-      if (viewPw) {
-        const s = crypto.getRandomValues(new Uint8Array(16));
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        entries.push({ path: `${dir}/slides.pptx.enc`, data: await Crypto.encPw(pptxBytes, viewPw, s, iv) });
-        pptxMeta = { file: `${dir}/slides.pptx.enc`, encrypted: true, salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
-      } else {
-        entries.push({ path: `${dir}/slides.pptx`, data: pptxBytes });
-        pptxMeta = { file: `${dir}/slides.pptx`, encrypted: false };
-      }
+      entries.push({ path: `${dir}/slides.pdf`, data: pdfBytes });
+      pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
     }
 
+    // 4. Generate vouchers
     logLine(`[*] Generating ${vcount} voucher(s)…`);
     const newVouchers = [], codes = [];
     for (let i = 0; i < vcount; i++) {
@@ -875,6 +841,7 @@ document.getElementById('upload-btn').onclick = async () => {
       codes.push(code);
     }
 
+    // 5. Update data.json
     logLine('[*] Updating data.json…');
     const fresh = await (async () => {
       const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
@@ -888,7 +855,7 @@ document.getElementById('upload-btn').onclick = async () => {
       id, title, description: desc,
       created: new Date().toISOString().slice(0, 10),
       locked: !!viewPw,
-      pdf: pdfMeta, pptxView: pptxMeta,
+      pdf: pdfMeta,
       source: {
         file: `${dir}/source.pptx.enc`,
         salt: Crypto.bufToB64(presSalt), iv: Crypto.bufToB64(srcIv),
@@ -897,6 +864,7 @@ document.getElementById('upload-btn').onclick = async () => {
     fresh.vouchers.push(...newVouchers);
     entries.push({ path: 'data.json', text: JSON.stringify(fresh, null, 2) });
 
+    // 6. Commit to GitHub
     logLine('[*] Committing to GitHub (this may take a moment)…');
     await commitFiles(entries, `add presentation: ${title}`);
 
@@ -907,7 +875,7 @@ document.getElementById('upload-btn').onclick = async () => {
     logLine('');
     logLine(`Live in ~30s: https://${CONFIG.owner}.github.io/${CONFIG.repo}/#v/${id}`);
 
-    adminFiles = { pptx: null, pdf: null };
+    adminFile = null;
     document.getElementById('file-list').innerHTML = '';
     document.getElementById('f-title').value = '';
     document.getElementById('f-desc').value = '';
