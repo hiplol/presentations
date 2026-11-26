@@ -117,7 +117,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 .viewer-page { user-select: none; -webkit-user-select: none; }
 .render-area { 
   display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; 
-  transition: filter 0.2s ease-in-out; /* Плавное размытие */
+  transition: filter 0.1s ease-out; /* Очень быстрое размытие */
 }
 .pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; -webkit-user-drag: none; }
 
@@ -656,7 +656,7 @@ document.addEventListener('paste', e => {
   e.preventDefault();
 });
 
-// 3. Блокировка горячих клавиш (включая Ctrl+S, PrintScreen, DevTools)
+// 3. Блокировка горячих клавиш (включая Ctrl+S, PrintScreen, DevTools, Ctrl+Scroll)
 document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
@@ -676,7 +676,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'PrintScreen' || e.keyCode === 44) {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText("Скриншоты запрещены. Ваш IP и данные записаны.");
+            navigator.clipboard.writeText(""); // Стираем буфер обмена
         }
       } catch (err) {}
       e.preventDefault();
@@ -688,16 +688,22 @@ document.addEventListener('keydown', e => {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
     
-    // Агрессивная защита от сохранения
-    if (k === 's') {
-        alert('Сохранение страницы отключено.');
-        document.getElementById('render-area').innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Сохранение отключено.</div>';
-        setTimeout(() => location.reload(), 1000);
+    // Агрессивная защита от сохранения и печати: стираем всё и редиректим
+    if (k === 's' || k === 'p') {
+        alert('Сохранение и печать отключены.');
+        document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Сохранение отключено.</div>';
+        setTimeout(() => location.hash = '', 1000); // Выкидываем на главную
     }
   }
 });
 
-// 4. Размытие при потере фокуса окна или переключении вкладки (без таймеров бездействия)
+// Защита от масштабирования (Ctrl + колесико), чтобы нельзя было отдалить
+document.addEventListener('wheel', e => {
+    if (!viewerActive()) return;
+    if (e.ctrlKey) e.preventDefault();
+}, { passive: false });
+
+// 4. МГНОВЕННОЕ размытие при выходе мыши за пределы страницы ИЛИ потере фокуса
 function applyBlur() {
     const area = document.getElementById('render-area');
     if (area) area.style.filter = 'blur(40px)';
@@ -709,6 +715,7 @@ function removeBlur() {
     }
 }
 
+// Потеря фокуса окна
 window.addEventListener('blur', applyBlur);
 window.addEventListener('focus', removeBlur);
 document.addEventListener('visibilitychange', () => {
@@ -716,6 +723,11 @@ document.addEventListener('visibilitychange', () => {
     else removeBlur();
 });
 
+// Выход мыши за пределы окна (на панель задач, за границы браузера)
+document.documentElement.addEventListener('mouseleave', applyBlur);
+document.documentElement.addEventListener('mouseenter', removeBlur);
+
+// Постоянная проверка (на всякий случай)
 setInterval(() => {
     if (viewerActive() && !document.hasFocus()) {
         applyBlur();
@@ -738,7 +750,7 @@ window.addEventListener('afterprint', () => {
   }
 });
 
-// 6. Защита от извлечения Canvas
+// 6. Защита от извлечения Canvas (если кто-то откроет консоль и попробует сохранить)
 const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
 HTMLCanvasElement.prototype.toDataURL = function() {
     if (viewerActive()) return ''; 
@@ -751,14 +763,13 @@ CanvasRenderingContext2D.prototype.getImageData = function() {
     return originalGetImageData.apply(this, arguments);
 };
 
-// 7. Anti-DevTools (Debugger loop)
+// 7. Anti-DevTools (Debugger loop) - если откроют консоль, сайт сотрет себя
 setInterval(() => {
     if (viewerActive()) {
         const start = performance.now();
-        debugger; // Если консоль открыта, выполнение остановится здесь
+        debugger; 
         const end = performance.now();
         if (end - start > 100) {
-            // Если задержка большая, значит консоль открыта
             document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Обнаружены инструменты разработчика. Страница заблокирована.</div>';
             throw new Error("DevTools detected");
         }
@@ -1321,3 +1332,4 @@ document.getElementById('voucher-issue').onclick = async () => {
 </script>
 </body>
 </html>
+
