@@ -115,9 +115,11 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 
 /* Viewer */
 .viewer-page { user-select: none; -webkit-user-select: none; }
-.render-area { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; transition: filter 0.2s; }
+.render-area { 
+  display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; 
+  transition: filter 0.2s ease-in-out; /* Плавное размытие */
+}
 .pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; -webkit-user-drag: none; }
-.blurred-content { filter: blur(30px) !important; pointer-events: none; }
 
 /* Watermark */
 .watermark-layer {
@@ -480,6 +482,7 @@ async function showViewer(pid) {
   };
 
   document.getElementById('render-area').innerHTML = '';
+  document.getElementById('render-area').style.filter = 'none';
   document.getElementById('lock-screen').classList.add('hidden');
   document.getElementById('pw-error').textContent = '';
   document.getElementById('pw-input').value = '';
@@ -532,17 +535,14 @@ async function buildWatermark() {
   const text3 = `DO NOT DISTRIBUTE · ${fp.slice(0, 8)}`;
   const text4 = `PROTECTED · ${date}`;
 
-  // Генерируем огромный плотный SVG (1000x1000)
   let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">`;
   
-  // Накладываем 60 случайных текстов разного размера, цвета и наклона
   for (let i = 0; i < 60; i++) {
     const x = Math.random() * 1000;
     const y = Math.random() * 1000;
     const rot = -60 + (Math.random() * 120);
-    const opacity = 0.15 + (Math.random() * 0.3); // 0.15 до 0.45
-    const size = 12 + Math.random() * 24; // от 12px до 36px
-    // Чередуем черный, белый и красный цвета для максимального контраста
+    const opacity = 0.15 + (Math.random() * 0.3);
+    const size = 12 + Math.random() * 24;
     const color = Math.random() > 0.6 ? '#ff3333' : (Math.random() > 0.5 ? '#ffffff' : '#000000');
     const texts = [text1, text2, text3, text4];
     const t = texts[Math.floor(Math.random() * texts.length)];
@@ -656,11 +656,12 @@ document.addEventListener('paste', e => {
   e.preventDefault();
 });
 
-// 3. Блокировка горячих клавиш
+// 3. Блокировка горячих клавиш (включая Ctrl+S, PrintScreen, DevTools)
 document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
   
+  // DevTools
   if (
       e.key === 'F12' ||
       (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) ||
@@ -671,36 +672,62 @@ document.addEventListener('keydown', e => {
       return false;
   }
 
+  // PrintScreen
+  if (e.key === 'PrintScreen' || e.keyCode === 44) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText("Скриншоты запрещены. Ваш IP и данные записаны.");
+        }
+      } catch (err) {}
+      e.preventDefault();
+      return false;
+  }
+
+  // Save, Print, Copy, Select All
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
+    
+    // Агрессивная защита от сохранения
+    if (k === 's') {
+        alert('Сохранение страницы отключено.');
+        document.getElementById('render-area').innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Сохранение отключено.</div>';
+        setTimeout(() => location.reload(), 1000);
+    }
   }
 });
 
-// 4. Размытие при потере фокуса
-function checkFocus() {
-  if (!viewerActive()) return;
-  const area = document.getElementById('render-area');
-  if (!document.hasFocus()) {
-    area.classList.add('blurred-content');
-  } else {
-    area.classList.remove('blurred-content');
-  }
+// 4. Размытие при потере фокуса окна или переключении вкладки (без таймеров бездействия)
+function applyBlur() {
+    const area = document.getElementById('render-area');
+    if (area) area.style.filter = 'blur(40px)';
 }
-window.addEventListener('blur', checkFocus);
-window.addEventListener('focus', checkFocus);
-document.addEventListener('mouseleave', checkFocus);
-document.addEventListener('mouseenter', checkFocus);
+function removeBlur() {
+    if (document.hasFocus() && !document.hidden) {
+        const area = document.getElementById('render-area');
+        if (area) area.style.filter = 'none';
+    }
+}
 
-// Интервал для отлова "Ножниц" (Snipping Tool), которые могут не вызывать blur
-setInterval(checkFocus, 500);
+window.addEventListener('blur', applyBlur);
+window.addEventListener('focus', removeBlur);
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) applyBlur();
+    else removeBlur();
+});
+
+setInterval(() => {
+    if (viewerActive() && !document.hasFocus()) {
+        applyBlur();
+    }
+}, 500);
 
 // 5. Уничтожение контента при печати
 window.addEventListener('beforeprint', () => {
   if (viewerActive()) {
     const area = document.getElementById('render-area');
     area.dataset.savedHtml = area.innerHTML;
-    area.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Printing is disabled</div>';
+    area.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Печать отключена.</div>';
   }
 });
 window.addEventListener('afterprint', () => {
@@ -710,6 +737,33 @@ window.addEventListener('afterprint', () => {
     delete area.dataset.savedHtml;
   }
 });
+
+// 6. Защита от извлечения Canvas
+const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+HTMLCanvasElement.prototype.toDataURL = function() {
+    if (viewerActive()) return ''; 
+    return originalToDataURL.apply(this, arguments);
+};
+
+const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+CanvasRenderingContext2D.prototype.getImageData = function() {
+    if (viewerActive()) return new ImageData(1, 1);
+    return originalGetImageData.apply(this, arguments);
+};
+
+// 7. Anti-DevTools (Debugger loop)
+setInterval(() => {
+    if (viewerActive()) {
+        const start = performance.now();
+        debugger; // Если консоль открыта, выполнение остановится здесь
+        const end = performance.now();
+        if (end - start > 100) {
+            // Если задержка большая, значит консоль открыта
+            document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Обнаружены инструменты разработчика. Страница заблокирована.</div>';
+            throw new Error("DevTools detected");
+        }
+    }
+}, 1000);
 
 
 // ================= PASSWORD =================
