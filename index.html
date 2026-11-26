@@ -199,12 +199,17 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
       <label>Master password (wrap voucher keys; keep it safe)</label>
       <input id="master-pw" type="password" placeholder="Enter master password">
 
-      <label>Drop .pptx (we'll convert it to PDF for viewing automatically)</label>
+      <label>Upload files — .pptx (source) and/or .pdf (preview)</label>
       <div id="dropzone" class="dropzone">
-        <p>Drop .pptx here or click to select</p>
-        <input id="file-input" type="file" accept=".pptx" hidden>
+        <p>Drop .pptx and/or .pdf here, or click to select</p>
+        <input id="file-input" type="file" accept=".pptx,.pdf" multiple hidden>
       </div>
       <div id="file-list" class="file-list"></div>
+      <p class="muted" style="font-size:12px; margin-top:6px;">
+        • Only <b>.pptx</b> → preview unavailable, but source is downloadable via voucher.<br>
+        • Only <b>.pdf</b> → used both as preview and as source.<br>
+        • Both → .pptx is source, .pdf is preview.
+      </p>
 
       <label>Title</label>
       <input id="f-title" placeholder="e.g. Q4 Report 2025">
@@ -236,7 +241,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
       <select id="voucher-pres"></select>
       <label>Note</label>
       <input id="voucher-note" placeholder="e.g. for Ivan / Telegram">
-      
+
       <div class="form-actions">
         <button id="voucher-issue" class="btn">Issue voucher</button>
       </div>
@@ -265,11 +270,11 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 <div id="modal-voucher" class="modal hidden">
   <div class="modal-inner">
     <h2>Redeem voucher</h2>
-    <p class="muted" style="font-size:13px; line-height:1.5;">Enter the code you were given to download the source .pptx file.</p>
+    <p class="muted" style="font-size:13px; line-height:1.5;">Enter the code you were given to download the source file.</p>
     <input id="voucher-input" placeholder="XXXX...">
     <div class="modal-actions">
       <button id="voucher-cancel" class="btn ghost">Cancel</button>
-      <button id="voucher-go" class="btn">Download .pptx</button>
+      <button id="voucher-go" class="btn">Download file</button>
     </div>
     <p id="voucher-status" class="muted" style="font-size:13px; margin-bottom:0;"></p>
   </div>
@@ -337,6 +342,7 @@ const Crypto = (() => {
 })();
 
 const rand = n => [...crypto.getRandomValues(new Uint8Array(n))].map(b => b.toString(16).padStart(2, '0')).join('');
+const hex = u8 => [...u8].map(b => b.toString(16).padStart(2, '0')).join('');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // ================= DATA =================
@@ -382,14 +388,14 @@ async function showGrid() {
   await loadData();
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  
+
   if (!DB.presentations.length) {
     grid.innerHTML = '<p class="muted" style="grid-column:1/-1; text-align:center; margin-top:40px;">No presentations yet. Go to Admin to add one.</p>';
     return;
   }
-  
+
   DB.presentations.sort((a, b) => (b.created || '').localeCompare(a.created || ''));
-  
+
   for (const p of DB.presentations) {
     const el = document.createElement('div');
     el.className = 'card';
@@ -412,11 +418,11 @@ async function showViewer(pid) {
   document.getElementById('admin-view').classList.add('hidden');
   document.getElementById('back-btn').classList.remove('hidden');
   document.getElementById('back-btn').onclick = () => location.hash = '';
-  
+
   document.getElementById('voucher-btn').classList.remove('hidden');
   document.getElementById('voucher-btn').onclick = () => document.getElementById('modal-voucher').classList.remove('hidden');
   document.getElementById('request-btn').classList.remove('hidden');
-  
+
   document.getElementById('render-area').innerHTML = '';
   document.getElementById('lock-screen').classList.add('hidden');
   document.getElementById('pw-error').textContent = '';
@@ -424,7 +430,7 @@ async function showViewer(pid) {
   await loadData();
   CURRENT = DB.presentations.find(p => p.id === pid);
   if (!CURRENT) { document.getElementById('page-title').textContent = 'Not found'; return; }
-  
+
   document.getElementById('page-title').textContent = CURRENT.title;
   document.title = CURRENT.title;
 
@@ -434,7 +440,7 @@ async function showViewer(pid) {
   if (CURRENT.locked) {
     document.getElementById('lock-screen').classList.remove('hidden');
   } else {
-    try { await renderSlides(null); } 
+    try { await renderSlides(null); }
     catch (e) { console.error(e); }
   }
 }
@@ -467,32 +473,37 @@ function loadScript(src) {
 
 async function renderSlides(password) {
   const meta = CURRENT.pdf;
-  
+
+  // Fix #4: graceful "no preview" instead of crash
   if (!meta) {
-      const area = document.getElementById('render-area');
-      area.innerHTML = `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">
-        ❌ This presentation was uploaded before PDF support was added.<br><br>
-        <span style="font-size:14px; color:#ccc">Please go to Admin and delete it, then upload it again.</span>
-      </p>`;
-      return;
+    const area = document.getElementById('render-area');
+    area.innerHTML = `<div style="text-align:center; margin-top:40px; padding:0 20px;">
+      <p style="font-size:16px; color:var(--muted); margin-bottom:12px;">📄 Preview not available for this presentation.</p>
+      <p style="font-size:14px; color:var(--muted); line-height:1.6;">
+        The author uploaded only the source file.<br>
+        Use the <b>Redeem voucher</b> button in the top bar to obtain the source.
+      </p>
+    </div>`;
+    document.getElementById('lock-screen').classList.add('hidden');
+    return;
   }
 
   const r = await fetch(RAW + meta.file + '?t=' + Date.now(), { cache: 'no-store' });
   if (!r.ok) throw new Error('Failed to download presentation file from GitHub. Check if the file exists.');
-  
+
   let buf = await r.arrayBuffer();
   if (meta.encrypted) {
-    try { 
-      buf = await Crypto.decPw(buf, password, Crypto.b64ToBuf(meta.salt), Crypto.b64ToBuf(meta.iv)); 
-    } catch (e) { 
-      throw new Error('Incorrect password or corrupted file'); 
+    try {
+      buf = await Crypto.decPw(buf, password, Crypto.b64ToBuf(meta.salt), Crypto.b64ToBuf(meta.iv));
+    } catch (e) {
+      throw new Error('Incorrect password or corrupted file');
     }
   }
-  
+
   document.getElementById('lock-screen').classList.add('hidden');
   const area = document.getElementById('render-area');
   area.innerHTML = '<p class="muted" style="text-align:center; margin-top:20px;">Rendering slides, please wait...</p>';
-  
+
   try {
     await renderPdf(buf);
   } catch (e) {
@@ -508,13 +519,13 @@ async function renderPdf(bytes) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
-  
+
   try {
     const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const area = document.getElementById('render-area');
-    area.innerHTML = ''; 
-    
+    area.innerHTML = '';
+
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const vp = page.getViewport({ scale: 1.3 * scale });
@@ -556,10 +567,10 @@ window.addEventListener('afterprint', () => document.getElementById('render-area
 document.getElementById('pw-submit').onclick = async () => {
   const btn = document.getElementById('pw-submit');
   btn.disabled = true; btn.textContent = 'Checking...';
-  try { 
-    await renderSlides(document.getElementById('pw-input').value); 
-  } catch (e) { 
-    document.getElementById('pw-error').textContent = e.message === 'Incorrect password or corrupted file' ? 'Incorrect password' : 'Error: ' + e.message; 
+  try {
+    await renderSlides(document.getElementById('pw-input').value);
+  } catch (e) {
+    document.getElementById('pw-error').textContent = e.message === 'Incorrect password or corrupted file' ? 'Incorrect password' : 'Error: ' + e.message;
   } finally {
     btn.disabled = false; btn.textContent = 'Open';
   }
@@ -576,12 +587,12 @@ document.getElementById('req-send').onclick = async () => {
   const status = document.getElementById('req-status');
   if (!contact) { status.textContent = 'Contact required'; return; }
   const text = `Copy request\n\nPresentation: ${CURRENT.title}\nID: ${CURRENT.id}\nRequester: ${contact}\nReason: ${reason || '—'}`;
-  try { 
-    await navigator.clipboard.writeText(text); 
-    status.textContent = 'Copied to clipboard.'; 
+  try {
+    await navigator.clipboard.writeText(text);
+    status.textContent = 'Copied to clipboard.';
     setTimeout(() => modal.classList.add('hidden'), 1500);
-  } catch (e) { 
-    status.textContent = 'Failed to copy. Please select and copy manually.'; 
+  } catch (e) {
+    status.textContent = 'Failed to copy. Please select and copy manually.';
   }
 };
 
@@ -592,10 +603,15 @@ document.getElementById('voucher-go').onclick = async () => {
   const code = document.getElementById('voucher-input').value.trim();
   const status = document.getElementById('voucher-status');
   const btn = document.getElementById('voucher-go');
-  
+
   if (!code) { status.textContent = 'Enter code'; return; }
+  // Fix #7: guard against missing source
+  if (!CURRENT || !CURRENT.source || !CURRENT.source.file) {
+    status.textContent = 'Source file not available for this presentation.';
+    return;
+  }
   status.textContent = 'Checking…'; btn.disabled = true;
-  
+
   try {
     let found = false;
     for (const v of DB.vouchers) {
@@ -604,22 +620,25 @@ document.getElementById('voucher-go').onclick = async () => {
         const kek = await Crypto.decPw(Crypto.b64ToBuf(v.encrypted_key), code, Crypto.b64ToBuf(v.salt), Crypto.b64ToBuf(v.iv));
         const sRes = await fetch(RAW + CURRENT.source.file + '?t=' + Date.now(), { cache: 'no-store' });
         const sCt = await sRes.arrayBuffer();
-        const pptx = await Crypto.decRaw(sCt, new Uint8Array(kek), Crypto.b64ToBuf(CURRENT.source.iv));
-        
-        const blob = new Blob([pptx], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+        const plain = await Crypto.decRaw(sCt, new Uint8Array(kek), Crypto.b64ToBuf(CURRENT.source.iv));
+
+        // Fix #2: use original filename, not hardcoded .pptx
+        const fname = CURRENT.source.original_name
+          || (CURRENT.title + (CURRENT.source.file.endsWith('.pdf.enc') ? '.pdf' : '.pptx'));
+        const blob = new Blob([plain], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = CURRENT.title + '.pptx'; a.click();
+        a.href = url; a.download = fname; a.click();
         URL.revokeObjectURL(url);
-        
+
         status.textContent = 'File downloaded.';
         found = true;
         break;
       } catch (e) { /* try next voucher */ }
     }
     if (!found) status.textContent = 'Voucher does not match.';
-  } catch (e) { 
-    status.textContent = 'Error: ' + e.message; 
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
   } finally {
     btn.disabled = false;
   }
@@ -643,22 +662,20 @@ async function showAdmin() {
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-panel').classList.remove('hidden');
     await loadData();
-    
-    // Fill Dropdown
+
     const sel = document.getElementById('voucher-pres');
     sel.innerHTML = DB.presentations.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('') || '<option value="">(no presentations)</option>';
-    
-    // Fill Manage List
+
     const list = document.getElementById('manage-list');
     if (!DB.presentations.length) {
-        list.innerHTML = '<div class="manage-item muted">No presentations</div>';
+      list.innerHTML = '<div class="manage-item muted">No presentations</div>';
     } else {
-        list.innerHTML = DB.presentations.map(p => `
-          <div class="manage-item">
-            <span>${esc(p.title)} ${p.pdf ? '' : '<span style="color:#ff6b6b;font-size:12px;">(No PDF)</span>'}</span>
-            <button class="btn danger" style="padding:4px 8px;font-size:12px;" onclick="deletePres('${p.id}')">Delete</button>
-          </div>
-        `).join('');
+      list.innerHTML = DB.presentations.map(p => `
+        <div class="manage-item">
+          <span>${esc(p.title)} ${p.pdf ? '' : '<span style="color:#ff6b6b;font-size:12px;">(no preview)</span>'}</span>
+          <button class="btn danger" style="padding:4px 8px;font-size:12px;" onclick="deletePres('${p.id}')">Delete</button>
+        </div>
+      `).join('');
     }
   } else {
     document.getElementById('admin-login').classList.remove('hidden');
@@ -675,7 +692,7 @@ window.deletePres = async (id) => {
     })();
     fresh.presentations = fresh.presentations.filter(p => p.id !== id);
     fresh.vouchers = fresh.vouchers.filter(v => v.presentation_id !== id);
-    
+
     await commitFiles([{ path: 'data.json', text: JSON.stringify(fresh, null, 2) }], `delete presentation: ${id}`);
     alert('Deleted successfully. Files might remain in the repo but won\'t show on the site.');
     await showAdmin();
@@ -688,10 +705,10 @@ document.getElementById('pat-save').onclick = async () => {
   const tok = document.getElementById('pat-input').value.trim();
   const st = document.getElementById('pat-status');
   const btn = document.getElementById('pat-save');
-  
+
   if (!tok) { st.textContent = 'Token required'; return; }
   st.textContent = 'Checking…'; btn.disabled = true;
-  
+
   try {
     const r = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`, {
       headers: { Authorization: `Bearer ${tok}` }
@@ -699,8 +716,8 @@ document.getElementById('pat-save').onclick = async () => {
     if (!r.ok) throw new Error(r.status === 401 ? 'Invalid token' : 'Access denied');
     localStorage.setItem('gh_token', tok);
     await showAdmin();
-  } catch (e) { 
-    st.textContent = 'Error: ' + e.message; 
+  } catch (e) {
+    st.textContent = 'Error: ' + e.message;
   } finally {
     btn.disabled = false;
   }
@@ -712,7 +729,7 @@ document.getElementById('logout-btn').onclick = () => {
 };
 
 // --- Dropzone ---
-let adminFile = null;
+let adminPptx = null, adminPdf = null;
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
 dropzone.onclick = () => fileInput.click();
@@ -721,19 +738,25 @@ dropzone.ondragleave = () => dropzone.classList.remove('dragover');
 dropzone.ondrop = e => { e.preventDefault(); dropzone.classList.remove('dragover'); pick(e.dataTransfer.files); };
 fileInput.onchange = e => pick(e.target.files);
 
+// Fix #5: handle both .pptx and .pdf
 function pick(files) {
-  adminFile = null;
+  adminPptx = null; adminPdf = null;
+  const items = [];
   for (const f of files) {
-    if (f.name.toLowerCase().endsWith('.pptx')) {
-      adminFile = f;
-      break;
+    const n = f.name.toLowerCase();
+    if (n.endsWith('.pptx')) {
+      adminPptx = f;
+      items.push(`📊 ${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`);
+    } else if (n.endsWith('.pdf')) {
+      adminPdf = f;
+      items.push(`📄 ${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`);
     }
   }
-  const items = [];
-  if (adminFile) items.push(`📊 ${adminFile.name} (${(adminFile.size/1024/1024).toFixed(1)} MB)`);
-  document.getElementById('file-list').innerHTML = items.join('<br>') || 'No .pptx file selected';
+  if (!items.length) items.push('No file selected (need .pptx and/or .pdf)');
+  document.getElementById('file-list').innerHTML = items.join('<br>');
   const t = document.getElementById('f-title');
-  if (adminFile && !t.value) t.value = adminFile.name.replace(/\.pptx$/i, '');
+  const first = adminPptx || adminPdf;
+  if (first && !t.value) t.value = first.name.replace(/\.(pptx|pdf)$/i, '');
 }
 
 function logLine(msg, type='') {
@@ -801,36 +824,14 @@ async function commitFiles(files, message) {
   return newCommit.sha;
 }
 
-// ================= CONVERT PPTX TO PDF =================
-async function convertPptxToPdf(file) {
-    logLine('[*] Loading conversion library (this may take a few seconds)...');
-    if (!window.Ream) {
-        await loadScript('https://cdn.jsdelivr.net/npm/reamkit/dist/ream.umd.js');
-    }
-    
-    logLine('[*] Converting PPTX to PDF (this may take a minute for large files)...');
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    
-    try {
-        const doc = Ream.parse(bytes);
-        const pdfBytes = await doc.convert('pdf');
-        logLine('[✓] Conversion successful.', 'success');
-        return new Uint8Array(pdfBytes);
-    } catch (error) {
-        logLine('[!] Conversion failed: ' + error.message, 'fail');
-        throw new Error('Auto-conversion to PDF failed. The presentation might be too complex.');
-    }
-}
-
 // ================= ADD PRESENTATION =================
 document.getElementById('upload-btn').onclick = async () => {
   const log = document.getElementById('log');
   log.innerHTML = '';
   log.classList.remove('hidden');
-  
+
   const btn = document.getElementById('upload-btn'); btn.disabled = true;
-  
+
   try {
     const master = document.getElementById('master-pw').value;
     const title = document.getElementById('f-title').value.trim();
@@ -840,37 +841,50 @@ document.getElementById('upload-btn').onclick = async () => {
 
     if (!master) throw new Error('Master password required');
     if (!title) throw new Error('Title required');
-    if (!adminFile) throw new Error('.pptx file is required');
+    if (!adminPptx && !adminPdf) throw new Error('Upload a .pptx and/or .pdf file');
 
     const id = rand(5);
     const dir = `presentations/${id}`;
     const entries = [];
 
-    logLine(`[*] Reading ${adminFile.name}…`);
-    const pptxBytes = new Uint8Array(await adminFile.arrayBuffer());
-    if (pptxBytes.length > 85 * 1024 * 1024) {
+    // Fix #1: no fake Ream conversion. Source is pptx if present, otherwise pdf.
+    const sourceFile = adminPptx || adminPdf;
+    const sourceExt = adminPptx ? 'pptx' : 'pdf';
+    logLine(`[*] Reading ${sourceFile.name}…`);
+    const sourceBytes = new Uint8Array(await sourceFile.arrayBuffer());
+    if (sourceBytes.length > 85 * 1024 * 1024) {
       logLine(`[!] Warning: file is very large. GitHub might reject files > 100MB.`, 'fail');
     }
 
-    const pdfBytes = await convertPptxToPdf(adminFile);
-
     const presSalt = crypto.getRandomValues(new Uint8Array(16));
     const kek = await Crypto.deriveRaw(master, presSalt);
-    
-    logLine('[*] Encrypting source.pptx…');
-    const srcIv = crypto.getRandomValues(new Uint8Array(12));
-    entries.push({ path: `${dir}/source.pptx.enc`, data: await Crypto.encRaw(pptxBytes, kek, srcIv) });
+    // Fix #3: store a verifier so wrong master pw is caught at voucher-issue time
+    const kekCheck = await Crypto.sha256Hex(hex(kek));
 
+    logLine('[*] Encrypting source file…');
+    const srcIv = crypto.getRandomValues(new Uint8Array(12));
+    entries.push({ path: `${dir}/source.${sourceExt}.enc`, data: await Crypto.encRaw(sourceBytes, kek, srcIv) });
+
+    // Preview: from PDF. If only pdf uploaded, preview = same file.
     let pdfMeta = null;
-    logLine('[*] Encrypting slides.pdf for viewing…');
-    if (viewPw) {
-      const s = crypto.getRandomValues(new Uint8Array(16));
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      entries.push({ path: `${dir}/slides.pdf.enc`, data: await Crypto.encPw(pdfBytes, viewPw, s, iv) });
-      pdfMeta = { file: `${dir}/slides.pdf.enc`, encrypted: true, salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
+    let previewBytes = null;
+    if (adminPdf) {
+      previewBytes = (sourceExt === 'pdf') ? sourceBytes : new Uint8Array(await adminPdf.arrayBuffer());
+    }
+
+    if (previewBytes) {
+      logLine('[*] Preparing PDF for viewing…');
+      if (viewPw) {
+        const s = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        entries.push({ path: `${dir}/slides.pdf.enc`, data: await Crypto.encPw(previewBytes, viewPw, s, iv) });
+        pdfMeta = { file: `${dir}/slides.pdf.enc`, encrypted: true, salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
+      } else {
+        entries.push({ path: `${dir}/slides.pdf`, data: previewBytes });
+        pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
+      }
     } else {
-      entries.push({ path: `${dir}/slides.pdf`, data: pdfBytes });
-      pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
+      logLine('[!] No .pdf uploaded — in-browser preview will be unavailable (source can still be shared via vouchers).', 'fail');
     }
 
     logLine(`[*] Generating ${vcount} voucher(s)…`);
@@ -897,15 +911,18 @@ document.getElementById('upload-btn').onclick = async () => {
     })();
     fresh.presentations = fresh.presentations || [];
     fresh.vouchers = fresh.vouchers || [];
-    
+
     fresh.presentations.push({
       id, title, description: desc,
       created: new Date().toISOString().slice(0, 10),
-      locked: !!viewPw,
+      locked: !!viewPw && !!pdfMeta,
       pdf: pdfMeta,
+      kek_check: kekCheck,
       source: {
-        file: `${dir}/source.pptx.enc`,
-        salt: Crypto.bufToB64(presSalt), iv: Crypto.bufToB64(srcIv),
+        file: `${dir}/source.${sourceExt}.enc`,
+        salt: Crypto.bufToB64(presSalt),
+        iv: Crypto.bufToB64(srcIv),
+        original_name: sourceFile.name,
       },
     });
     fresh.vouchers.push(...newVouchers);
@@ -921,17 +938,17 @@ document.getElementById('upload-btn').onclick = async () => {
     logLine('');
     logLine(`Live in ~30s: https://${CONFIG.owner}.github.io/${CONFIG.repo}/#v/${id}`);
 
-    adminFile = null;
+    adminPptx = null; adminPdf = null;
     document.getElementById('file-list').innerHTML = '';
     document.getElementById('f-title').value = '';
     document.getElementById('f-desc').value = '';
     document.getElementById('f-password').value = '';
-    await showAdmin(); // Reload admin panel to show new items
+    await showAdmin();
   } catch (e) {
     logLine('[!] Error: ' + e.message, 'fail');
     console.error(e);
-  } finally { 
-    btn.disabled = false; 
+  } finally {
+    btn.disabled = false;
   }
 };
 
@@ -942,7 +959,7 @@ document.getElementById('voucher-issue').onclick = async () => {
   const master = document.getElementById('master-pw').value;
   const out = document.getElementById('voucher-out');
   const btn = document.getElementById('voucher-issue');
-  
+
   out.classList.add('hidden'); out.textContent = '';
 
   if (!presId) { out.textContent = 'No presentation selected'; out.classList.remove('hidden'); return; }
@@ -950,10 +967,20 @@ document.getElementById('voucher-issue').onclick = async () => {
 
   const pres = DB.presentations.find(p => p.id === presId);
   if (!pres) { out.textContent = 'Presentation not found'; out.classList.remove('hidden'); return; }
+  if (!pres.source || !pres.source.salt) { out.textContent = 'Source not available for this presentation'; out.classList.remove('hidden'); return; }
 
   btn.disabled = true;
   try {
-    const kek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+    const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+    // Fix #3: verify master pw against stored check
+    if (pres.kek_check) {
+      const check = await Crypto.sha256Hex(hex(derivedKek));
+      if (check !== pres.kek_check) {
+        throw new Error('Master password is wrong for this presentation');
+      }
+    }
+    const kek = derivedKek;
+
     const code = rand(16).toUpperCase();
     const vs = crypto.getRandomValues(new Uint8Array(16));
     const vi = crypto.getRandomValues(new Uint8Array(12));
@@ -979,9 +1006,9 @@ document.getElementById('voucher-issue').onclick = async () => {
     out.classList.remove('hidden');
     document.getElementById('voucher-note').value = '';
     await loadData();
-  } catch (e) { 
-    out.textContent = 'Error: ' + e.message; 
-    out.classList.remove('hidden'); 
+  } catch (e) {
+    out.textContent = 'Error: ' + e.message;
+    out.classList.remove('hidden');
   } finally {
     btn.disabled = false;
   }
