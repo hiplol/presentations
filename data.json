@@ -1,4 +1,32 @@
 {
-  "presentations": [],
-  "vouchers": []
+  "presentations": [
+    {
+      "id": "10c5c7ce4b",
+      "title": "Народы, религии на территории Индии",
+      "description": "",
+      "created": "2026-11-26",
+      "locked": false,
+      "pdf": null,
+      "pptxView": {
+        "file": "presentations/10c5c7ce4b/slides.pptx",
+        "encrypted": false
+      },
+      "source": {
+        "file": "presentations/10c5c7ce4b/source.pptx.enc",
+        "salt": "mPNrHYyACN+On3JX3JPg4Q==",
+        "iv": "Sac2FiX5aXWjv2lR"
+      }
+    }
+  ],
+  "vouchers": [
+    {
+      "id": "e56508bce8",
+      "presentation_id": "10c5c7ce4b",
+      "salt": "ml3Up6W/E8GDQjdRR5HFVw==",
+      "iv": "GnMvG8yLHUW2G0hQ",
+      "encrypted_key": "kd6X6EuXwV8IKSJtPSfEBJ4CIouW7C7yyzTFJYMiwQ+VQDbzrsFEKDksSuG5x6kr",
+      "created": "2026-11-26T13:51:44",
+      "note": ""
+    }
+  ]
 }
