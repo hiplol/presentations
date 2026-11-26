@@ -85,6 +85,26 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 #admin-panel textarea { min-height: 80px; resize: vertical; }
 .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; align-items: center;}
 
+/* Блокировка админки без пароля */
+#admin-locked-area {
+  transition: all 0.3s ease;
+  pointer-events: none;
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+#admin-locked-area.unlocked {
+  pointer-events: auto;
+  opacity: 1;
+  filter: none;
+}
+#pw-warning {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-left: 10px;
+  font-weight: normal;
+  display: none;
+}
+
 /* Dropzone */
 .dropzone {
   border: 2px dashed var(--line); border-radius: 10px; padding: 32px 20px;
@@ -206,56 +226,59 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
         After commit, the site is updated in ~5 seconds and visible on all devices.
       </p>
 
-      <label>Master password (wrap voucher keys; keep it safe)</label>
+      <label>Master password (wrap voucher keys; keep it safe) <span id="pw-warning">⚠️ Введите пароль для разблокировки</span></label>
       <input id="master-pw" type="password" placeholder="Enter master password">
 
-      <label>Upload files — .pptx (source) and/or .pdf (preview)</label>
-      <div id="dropzone" class="dropzone">
-        <p>Drop .pptx and/or .pdf here, or click to select</p>
-        <input id="file-input" type="file" accept=".pptx,.pdf" multiple hidden>
+      <!-- Блокируемая область -->
+      <div id="admin-locked-area">
+        <label>Upload files — .pptx (source) and/or .pdf (preview)</label>
+        <div id="dropzone" class="dropzone">
+          <p>Drop .pptx and/or .pdf here, or click to select</p>
+          <input id="file-input" type="file" accept=".pptx,.pdf" multiple hidden>
+        </div>
+        <div id="file-list" class="file-list"></div>
+        <p class="muted" style="font-size:12px; margin-top:6px;">
+          • Only <b>.pptx</b> → preview unavailable, but source is downloadable via voucher.<br>
+          • Only <b>.pdf</b> → used both as preview and as source.<br>
+          • Both → .pptx is source, .pdf is preview.
+        </p>
+
+        <label>Title</label>
+        <input id="f-title" placeholder="e.g. Q4 Report 2025">
+
+        <label>Description</label>
+        <textarea id="f-desc" placeholder="Optional description..."></textarea>
+
+        <label>View password (leave empty for public)</label>
+        <input id="f-password" type="password" placeholder="Optional view password">
+
+        <label>Vouchers</label>
+        <input id="f-vouchers" type="number" value="1" min="1" max="20">
+
+        <div class="form-actions">
+          <button id="upload-btn" class="btn">Add presentation</button>
+        </div>
+
+        <div id="log" class="log hidden"></div>
+
+        <hr>
+
+        <h2>Manage existing presentations</h2>
+        <div id="manage-list" class="manage-list"></div>
+
+        <hr>
+
+        <h2>Issue another voucher</h2>
+        <label>Presentation</label>
+        <select id="voucher-pres"></select>
+        <label>Note</label>
+        <input id="voucher-note" placeholder="e.g. for Ivan / Telegram">
+
+        <div class="form-actions">
+          <button id="voucher-issue" class="btn">Issue voucher</button>
+        </div>
+        <div id="voucher-out" class="voucher-list hidden"></div>
       </div>
-      <div id="file-list" class="file-list"></div>
-      <p class="muted" style="font-size:12px; margin-top:6px;">
-        • Only <b>.pptx</b> → preview unavailable, but source is downloadable via voucher.<br>
-        • Only <b>.pdf</b> → used both as preview and as source.<br>
-        • Both → .pptx is source, .pdf is preview.
-      </p>
-
-      <label>Title</label>
-      <input id="f-title" placeholder="e.g. Q4 Report 2025">
-
-      <label>Description</label>
-      <textarea id="f-desc" placeholder="Optional description..."></textarea>
-
-      <label>View password (leave empty for public)</label>
-      <input id="f-password" type="password" placeholder="Optional view password">
-
-      <label>Vouchers</label>
-      <input id="f-vouchers" type="number" value="1" min="1" max="20">
-
-      <div class="form-actions">
-        <button id="upload-btn" class="btn">Add presentation</button>
-      </div>
-
-      <div id="log" class="log hidden"></div>
-
-      <hr>
-
-      <h2>Manage existing presentations</h2>
-      <div id="manage-list" class="manage-list"></div>
-
-      <hr>
-
-      <h2>Issue another voucher</h2>
-      <label>Presentation</label>
-      <select id="voucher-pres"></select>
-      <label>Note</label>
-      <input id="voucher-note" placeholder="e.g. for Ivan / Telegram">
-
-      <div class="form-actions">
-        <button id="voucher-issue" class="btn">Issue voucher</button>
-      </div>
-      <div id="voucher-out" class="voucher-list hidden"></div>
     </div>
   </section>
 </main>
@@ -443,7 +466,7 @@ async function showGrid() {
   document.getElementById('page-title').textContent = CONFIG.siteTitle;
   document.title = CONFIG.siteTitle;
   CURRENT = null;
-  watermarkReady = false; // Отключаем проверку водяных знаков
+  watermarkReady = false;
 
   await loadData();
   const grid = document.getElementById('grid');
@@ -515,7 +538,7 @@ async function showViewer(pid) {
 
   await buildWatermark();
   document.getElementById('watermark-layer').classList.remove('hidden');
-  watermarkReady = true; // Включаем проверку водяных знаков
+  watermarkReady = true;
 
   if (CURRENT.locked) {
     document.getElementById('lock-screen').classList.remove('hidden');
@@ -551,7 +574,6 @@ async function buildWatermark() {
 
   let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">`;
   
-  // ПЛОТНОСТЬ 60 ЭЛЕМЕНТОВ
   for (let i = 0; i < 60; i++) {
     const x = Math.random() * 1000;
     const y = Math.random() * 1000;
@@ -625,7 +647,6 @@ async function renderPdf(bytes) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
   }
   
-  // ФИКС ОШИБКИ WORKER (Blob локально)
   if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
     try {
       const workerRes = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
@@ -662,14 +683,13 @@ async function renderPdf(bytes) {
 
 // ================= EXTREME PROTECTION =================
 
-let watermarkReady = false; // Флаг для безопасной проверки
+let watermarkReady = false;
 
 function viewerActive() {
   const v = document.getElementById('viewer-view');
   return v && !v.classList.contains('hidden');
 }
 
-// 1. Блокировка контекстного меню, копирования, выделения и перетаскивания
 ['contextmenu','copy','cut','dragstart','selectstart', 'drop'].forEach(ev =>
   document.addEventListener(ev, e => {
     if (!viewerActive()) return;
@@ -678,19 +698,16 @@ function viewerActive() {
   })
 );
 
-// 2. Блокировка вставки
 document.addEventListener('paste', e => {
   if (!viewerActive()) return;
   if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
   e.preventDefault();
 });
 
-// 3. Блокировка горячих клавиш (включая Ctrl+S, PrintScreen, DevTools, Mac Screenshots)
 document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
   
-  // DevTools
   if (
       e.key === 'F12' ||
       (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) ||
@@ -701,7 +718,6 @@ document.addEventListener('keydown', e => {
       return false;
   }
 
-  // PrintScreen и Mac скриншоты
   if (
       e.key === 'PrintScreen' || 
       e.keyCode === 44 ||
@@ -709,19 +725,17 @@ document.addEventListener('keydown', e => {
   ) {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(""); // Очищаем буфер
+            navigator.clipboard.writeText(""); 
         }
       } catch (err) {}
       e.preventDefault();
       return false;
   }
 
-  // Save, Print, Copy, Select All
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
     
-    // Уничтожение контента при сохранении/печати
     if (k === 's' || k === 'p') {
         alert('Сохранение и печать отключены.');
         document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Сохранение отключено.</div>';
@@ -730,13 +744,11 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Защита от масштабирования (Ctrl + колесико)
 document.addEventListener('wheel', e => {
     if (!viewerActive()) return;
     if (e.ctrlKey) e.preventDefault();
 }, { passive: false });
 
-// 4. МГНОВЕННОЕ размытие
 function applyBlur() {
     const area = document.getElementById('render-area');
     if (area) area.style.filter = 'blur(40px)';
@@ -758,13 +770,12 @@ document.addEventListener('visibilitychange', () => {
 document.documentElement.addEventListener('mouseleave', applyBlur);
 document.documentElement.addEventListener('mouseenter', removeBlur);
 
-// 5. Таймер бездействия (5 секунд без движения мыши/клавиатуры -> размытие)
 let idleTimer;
 function resetIdleTimer() {
     if (!viewerActive()) return;
     removeBlur();
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(applyBlur, 5000); // 5 секунд
+    idleTimer = setTimeout(applyBlur, 5000);
 }
 window.addEventListener('mousemove', resetIdleTimer);
 window.addEventListener('keydown', resetIdleTimer);
@@ -776,7 +787,6 @@ setInterval(() => {
     }
 }, 500);
 
-// 6. Уничтожение контента при печати
 window.addEventListener('beforeprint', () => {
   if (viewerActive()) {
     const area = document.getElementById('render-area');
@@ -792,7 +802,6 @@ window.addEventListener('afterprint', () => {
   }
 });
 
-// 7. Защита от извлечения Canvas
 const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
 HTMLCanvasElement.prototype.toDataURL = function() {
     if (viewerActive()) return ''; 
@@ -805,7 +814,6 @@ CanvasRenderingContext2D.prototype.getImageData = function() {
     return originalGetImageData.apply(this, arguments);
 };
 
-// 8. Anti-DevTools (Debugger loop)
 setInterval(() => {
     if (viewerActive()) {
         const start = performance.now();
@@ -818,7 +826,6 @@ setInterval(() => {
     }
 }, 1000);
 
-// 9. Безопасная защита от удаления водяных знаков (вызывается раз в секунду)
 setInterval(() => {
     if (viewerActive() && watermarkReady) {
         const wm = document.getElementById('watermark-layer');
@@ -924,12 +931,34 @@ async function showAdmin() {
   document.getElementById('request-btn').classList.add('hidden');
   document.getElementById('page-title').textContent = 'Admin';
   document.title = 'Admin';
-  watermarkReady = false; // Отключаем проверку
+  watermarkReady = false;
 
   const token = localStorage.getItem('gh_token');
   if (token) {
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-panel').classList.remove('hidden');
+    
+    // === ЛОГИКА БЛОКИРОВКИ АДМИНКИ ===
+    const masterPwInput = document.getElementById('master-pw');
+    const lockedArea = document.getElementById('admin-locked-area');
+    const pwWarning = document.getElementById('pw-warning');
+
+    function updateAdminLockState() {
+        if (masterPwInput.value.trim().length > 0) {
+            lockedArea.classList.add('unlocked');
+            pwWarning.style.display = 'none';
+        } else {
+            lockedArea.classList.remove('unlocked');
+            pwWarning.style.display = 'inline';
+        }
+    }
+
+    // Удаляем старый слушатель, чтобы не дублировался при переходах
+    masterPwInput.removeEventListener('input', updateAdminLockState);
+    masterPwInput.addEventListener('input', updateAdminLockState);
+    updateAdminLockState(); // Проверяем текущее состояние
+    // =================================
+
     await loadData(true);
 
     const sel = document.getElementById('voucher-pres');
@@ -1098,7 +1127,7 @@ function logLine(msg, type='') {
   el.scrollTop = el.scrollHeight;
 }
 
-// ================= GITHUB COMMIT (С ЗАЩИТОЙ ОТ 422) =================
+// ================= GITHUB COMMIT =================
 async function commitFiles(files, message) {
   const token = localStorage.getItem('gh_token');
   const api = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`;
@@ -1184,7 +1213,6 @@ async function commitFiles(files, message) {
   }
 }
 
-// Полное дерево репозитория — нужно, чтобы удалить файлы презентации
 async function listRepoFiles() {
   const token = localStorage.getItem('gh_token');
   const api = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`;
