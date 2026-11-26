@@ -1005,21 +1005,37 @@ window.deletePres = async (id) => {
   const master = document.getElementById('master-pw').value;
   if (!master) return alert("Введите мастер-пароль (поле вверху), чтобы разблокировать удаление.");
 
-  if (!confirm('Delete this presentation?\n\n• All files in presentations/' + id + '/ will be removed from the repo\n• All its vouchers will be revoked\n\nThis cannot be undone.')) return;
-  
   try {
     const fresh = await fetchFreshData();
     const pres = fresh.presentations.find(p => p.id === id);
     if (!pres) throw new Error('Presentation not found in data.json');
 
-    // Криптографическая проверка мастер-пароля для данной презентации
+    let isPasswordCorrect = false;
+    
+    // 1. Быстрая проверка через хэш (для новых презентаций)
     if (pres.kek_check && pres.source && pres.source.salt) {
       const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
       const check = await Crypto.sha256Hex(hex(derivedKek));
-      if (check !== pres.kek_check) {
-        throw new Error('Неверный мастер-пароль. Удаление отменено.');
-      }
+      if (check === pres.kek_check) isPasswordCorrect = true;
+    } 
+    // 2. Медленная проверка расшифровкой (для старых презентаций без хэша)
+    else if (pres.source && pres.source.salt && pres.source.iv) {
+      try {
+        const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+        const r = await fetch(RAW + pres.source.file);
+        if (r.ok) {
+            const buf = await r.arrayBuffer();
+            await Crypto.decRaw(buf, derivedKek, Crypto.b64ToBuf(pres.source.iv));
+            isPasswordCorrect = true;
+        }
+      } catch (e) {}
     }
+
+    if (!isPasswordCorrect) {
+      throw new Error('Неверный мастер-пароль. Удаление отменено.');
+    }
+
+    if (!confirm('Delete this presentation?\n\n• All files in presentations/' + id + '/ will be removed from the repo\n• All its vouchers will be revoked\n\nThis cannot be undone.')) return;
 
     const treeInfo = await listRepoFiles();
     if (treeInfo.truncated) {
@@ -1051,22 +1067,35 @@ window.deleteVoucher = async (vid) => {
   const master = document.getElementById('master-pw').value;
   if (!master) return alert("Введите мастер-пароль (поле вверху), чтобы разблокировать отзыв ваучера.");
 
-  if (!confirm('Revoke this voucher? It will immediately stop working.')) return;
-
   try {
     const fresh = await fetchFreshData();
     const v = (fresh.vouchers || []).find(x => x.id === vid);
     if (!v) throw new Error('Voucher not found');
 
-    // Находим презентацию этого ваучера для проверки пароля
     const pres = fresh.presentations.find(p => p.id === v.presentation_id);
+    
+    let isPasswordCorrect = false;
     if (pres && pres.kek_check && pres.source && pres.source.salt) {
       const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
       const check = await Crypto.sha256Hex(hex(derivedKek));
-      if (check !== pres.kek_check) {
-        throw new Error('Неверный мастер-пароль. Отзыв ваучера отменен.');
-      }
+      if (check === pres.kek_check) isPasswordCorrect = true;
+    } else if (pres && pres.source && pres.source.salt && pres.source.iv) {
+      try {
+        const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+        const r = await fetch(RAW + pres.source.file);
+        if (r.ok) {
+            const buf = await r.arrayBuffer();
+            await Crypto.decRaw(buf, derivedKek, Crypto.b64ToBuf(pres.source.iv));
+            isPasswordCorrect = true;
+        }
+      } catch (e) {}
     }
+
+    if (!isPasswordCorrect) {
+      throw new Error('Неверный мастер-пароль. Отзыв ваучера отменен.');
+    }
+
+    if (!confirm('Revoke this voucher? It will immediately stop working.')) return;
 
     fresh.vouchers = fresh.vouchers.filter(x => x.id !== vid);
     await commitFiles(
@@ -1400,13 +1429,28 @@ document.getElementById('voucher-issue').onclick = async () => {
     if (!pres) throw new Error('Presentation not found');
     if (!pres.source || !pres.source.salt) throw new Error('Source not available for this presentation');
 
-    const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+    let isPasswordCorrect = false;
     if (pres.kek_check) {
+      const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
       const check = await Crypto.sha256Hex(hex(derivedKek));
-      if (check !== pres.kek_check) {
-        throw new Error('Master password is wrong for this presentation');
-      }
+      if (check === pres.kek_check) isPasswordCorrect = true;
+    } else if (pres.source.salt && pres.source.iv) {
+       try {
+        const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+        const r = await fetch(RAW + pres.source.file);
+        if (r.ok) {
+            const buf = await r.arrayBuffer();
+            await Crypto.decRaw(buf, derivedKek, Crypto.b64ToBuf(pres.source.iv));
+            isPasswordCorrect = true;
+        }
+      } catch (e) {}
     }
+
+    if (!isPasswordCorrect) {
+      throw new Error('Master password is wrong for this presentation');
+    }
+    
+    const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
     const kek = derivedKek;
 
     const code = rand(16).toUpperCase();
