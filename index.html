@@ -640,7 +640,6 @@ document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
   
-  // Блокировка DevTools и View Source
   if (
       e.key === 'F12' ||
       (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) ||
@@ -651,7 +650,6 @@ document.addEventListener('keydown', e => {
       return false;
   }
 
-  // Блокировка сохранения / печати / копирования
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
@@ -667,7 +665,6 @@ window.addEventListener('blur', () => {
 window.addEventListener('focus', () => {
   document.getElementById('render-area').classList.remove('blurred-content');
 });
-// Также размываем, если мышка уходит за пределы окна
 document.addEventListener('mouseleave', () => {
   if (viewerActive()) {
     document.getElementById('render-area').classList.add('blurred-content');
@@ -962,7 +959,7 @@ function logLine(msg, type='') {
   el.scrollTop = el.scrollHeight;
 }
 
-// ================= GITHUB COMMIT =================
+// ================= GITHUB COMMIT (С ЗАЩИТОЙ ОТ 422) =================
 async function commitFiles(files, message) {
   const token = localStorage.getItem('gh_token');
   const api = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`;
@@ -972,53 +969,86 @@ async function commitFiles(files, message) {
     'Content-Type': 'application/json'
   };
 
-  const refR = await fetch(`${api}/git/ref/heads/${CONFIG.branch}`, { headers });
-  if (!refR.ok) throw new Error(`Failed to get branch ref: ${refR.status}`);
-  const ref = await refR.json();
-  const headSha = ref.object.sha;
+  const MAX_RETRIES = 3;
 
-  const commitR = await fetch(`${api}/git/commits/${headSha}`, { headers });
-  const headCommit = await commitR.json();
-  const baseTree = headCommit.tree.sha;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      // 1. Получаем актуальный HEAD ветки
+      const refR = await fetch(`${api}/git/ref/heads/${CONFIG.branch}`, { headers });
+      if (!refR.ok) throw new Error(`Failed to get branch ref: ${refR.status}`);
+      const ref = await refR.json();
+      const headSha = ref.object.sha;
 
-  const treeEntries = [];
-  for (const f of files) {
-    if (f.delete) {
-      treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
-      continue;
+      const commitR = await fetch(`${api}/git/commits/${headSha}`, { headers });
+      if (!commitR.ok) throw new Error(`Failed to get head commit: ${commitR.status}`);
+      const headCommit = await commitR.json();
+      const baseTree = headCommit.tree.sha;
+
+      // 2. Загружаем блобы
+      const treeEntries = [];
+      for (const f of files) {
+        if (f.delete) {
+          treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
+          continue;
+        }
+        const content = f.text !== undefined
+          ? Crypto.bufToB64(new TextEncoder().encode(f.text))
+          : Crypto.bufToB64(f.data);
+        const blobR = await fetch(`${api}/git/blobs`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ content, encoding: 'base64' })
+        });
+        if (!blobR.ok) throw new Error(`Failed to upload blob: ${blobR.status}`);
+        const blob = await blobR.json();
+        treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
+      }
+
+      // 3. Создаём дерево
+      const treeR = await fetch(`${api}/git/trees`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ base_tree: baseTree, tree: treeEntries })
+      });
+      if (!treeR.ok) throw new Error(`Failed to create tree: ${treeR.status}`);
+      const tree = await treeR.json();
+
+      // 4. Создаём коммит
+      const newCommitR = await fetch(`${api}/git/commits`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ message, tree: tree.sha, parents: [headSha] })
+      });
+      if (!newCommitR.ok) throw new Error(`Failed to create commit: ${newCommitR.status}`);
+      const newCommit = await newCommitR.json();
+
+      // 5. Обновляем ссылку
+      const updR = await fetch(`${api}/git/refs/heads/${CONFIG.branch}`, {
+        method: 'PATCH', headers,
+        body: JSON.stringify({ sha: newCommit.sha })
+      });
+
+      if (updR.ok) {
+        return newCommit.sha; // Успех
+      }
+
+      // Обработка 422 (конфликт веток)
+      if (updR.status === 422) {
+        const errBody = await updR.text();
+        if (errBody.toLowerCase().includes('fast forward')) {
+          if (attempt < MAX_RETRIES) {
+            console.warn(`[commitFiles] 422 fast-forward, retry ${attempt}/${MAX_RETRIES}...`);
+            await new Promise(r => setTimeout(r, 1000 * attempt)); // Задержка
+            continue; // Пробуем снова с новым headSha
+          }
+        }
+        throw new Error(`Failed to update ref (422): ${errBody}`);
+      }
+
+      throw new Error(`Failed to update ref: ${updR.status}`);
+    } catch (e) {
+      if (attempt === MAX_RETRIES) throw e;
+      console.warn(`[commitFiles] Attempt ${attempt} failed: ${e.message}. Retrying...`);
+      await new Promise(r => setTimeout(r, 1000 * attempt));
     }
-    const content = f.text !== undefined
-      ? Crypto.bufToB64(new TextEncoder().encode(f.text))
-      : Crypto.bufToB64(f.data);
-    const blobR = await fetch(`${api}/git/blobs`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ content, encoding: 'base64' })
-    });
-    if (!blobR.ok) throw new Error(`Failed to upload blob: ${blobR.status}`);
-    const blob = await blobR.json();
-    treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
   }
-
-  const treeR = await fetch(`${api}/git/trees`, {
-    method: 'POST', headers,
-    body: JSON.stringify({ base_tree: baseTree, tree: treeEntries })
-  });
-  if (!treeR.ok) throw new Error(`Failed to create tree: ${treeR.status}`);
-  const tree = await treeR.json();
-
-  const newCommitR = await fetch(`${api}/git/commits`, {
-    method: 'POST', headers,
-    body: JSON.stringify({ message, tree: tree.sha, parents: [headSha] })
-  });
-  if (!newCommitR.ok) throw new Error(`Failed to create commit: ${newCommitR.status}`);
-  const newCommit = await newCommitR.json();
-
-  const updR = await fetch(`${api}/git/refs/heads/${CONFIG.branch}`, {
-    method: 'PATCH', headers,
-    body: JSON.stringify({ sha: newCommit.sha })
-  });
-  if (!updR.ok) throw new Error(`Failed to update ref: ${updR.status}`);
-  return newCommit.sha;
 }
 
 // Полное дерево репозитория — нужно, чтобы удалить файлы презентации
