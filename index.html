@@ -117,17 +117,17 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 .viewer-page { user-select: none; -webkit-user-select: none; }
 .render-area { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; transition: filter 0.2s; }
 .pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; -webkit-user-drag: none; }
-.blurred-content { filter: blur(25px) !important; pointer-events: none; }
+.blurred-content { filter: blur(30px) !important; pointer-events: none; }
 
 /* Watermark */
 .watermark-layer {
   position: fixed; inset: 0; pointer-events: none;
-  background-repeat: repeat; z-index: 30; opacity: 0.9;
+  background-repeat: repeat; z-index: 9999; /* Поверх всего */
 }
 
 /* Modals */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex;
-  align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
 .modal-inner { background: var(--bg2); border: 1px solid var(--line);
   border-radius: 12px; padding: 24px; max-width: 480px; width: 100%; }
 .modal-inner h2 { margin-top: 0; }
@@ -525,14 +525,35 @@ async function buildWatermark() {
       navigator.userAgent + '|' + screen.width + 'x' + screen.height +
       '|' + Intl.DateTimeFormat().resolvedOptions().timeZone);
   } catch (e) {}
-  const text = `${ip} · ${fp.slice(0, 8)} · ${new Date().toLocaleString('en-US')}`;
-  const safe = esc(text);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="260">
-    <text x="50%" y="50%" font-family="sans-serif" font-size="18"
-      fill="rgba(120,120,120,0.16)" text-anchor="middle"
-      transform="rotate(-30 260 130)">${safe}</text></svg>`;
+  
+  const date = new Date().toLocaleString('en-US');
+  const text1 = `${ip} · ${fp.slice(0, 8)} · ${date}`;
+  const text2 = `CONFIDENTIAL · ${ip}`;
+  const text3 = `DO NOT DISTRIBUTE · ${fp.slice(0, 8)}`;
+  const text4 = `PROTECTED · ${date}`;
+
+  // Генерируем огромный плотный SVG (1000x1000)
+  let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">`;
+  
+  // Накладываем 60 случайных текстов разного размера, цвета и наклона
+  for (let i = 0; i < 60; i++) {
+    const x = Math.random() * 1000;
+    const y = Math.random() * 1000;
+    const rot = -60 + (Math.random() * 120);
+    const opacity = 0.15 + (Math.random() * 0.3); // 0.15 до 0.45
+    const size = 12 + Math.random() * 24; // от 12px до 36px
+    // Чередуем черный, белый и красный цвета для максимального контраста
+    const color = Math.random() > 0.6 ? '#ff3333' : (Math.random() > 0.5 ? '#ffffff' : '#000000');
+    const texts = [text1, text2, text3, text4];
+    const t = texts[Math.floor(Math.random() * texts.length)];
+    
+    svgContent += `<text x="${x}" y="${y}" font-family="monospace, sans-serif" font-size="${size}" font-weight="900" fill="${color}" opacity="${opacity}" transform="rotate(${rot} ${x} ${y})">${esc(t)}</text>`;
+  }
+  
+  svgContent += `</svg>`;
+  
   document.getElementById('watermark-layer').style.backgroundImage =
-    `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+    `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}")`;
 }
 
 function loadScript(src) {
@@ -635,7 +656,7 @@ document.addEventListener('paste', e => {
   e.preventDefault();
 });
 
-// 3. Блокировка горячих клавиш (Ctrl+S, P, C, A, U, F12, DevTools)
+// 3. Блокировка горячих клавиш
 document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
@@ -656,23 +677,23 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// 4. Защита от скриншотов через потерю фокуса
-window.addEventListener('blur', () => {
-  if (viewerActive()) {
-    document.getElementById('render-area').classList.add('blurred-content');
+// 4. Размытие при потере фокуса
+function checkFocus() {
+  if (!viewerActive()) return;
+  const area = document.getElementById('render-area');
+  if (!document.hasFocus()) {
+    area.classList.add('blurred-content');
+  } else {
+    area.classList.remove('blurred-content');
   }
-});
-window.addEventListener('focus', () => {
-  document.getElementById('render-area').classList.remove('blurred-content');
-});
-document.addEventListener('mouseleave', () => {
-  if (viewerActive()) {
-    document.getElementById('render-area').classList.add('blurred-content');
-  }
-});
-document.addEventListener('mouseenter', () => {
-  document.getElementById('render-area').classList.remove('blurred-content');
-});
+}
+window.addEventListener('blur', checkFocus);
+window.addEventListener('focus', checkFocus);
+document.addEventListener('mouseleave', checkFocus);
+document.addEventListener('mouseenter', checkFocus);
+
+// Интервал для отлова "Ножниц" (Snipping Tool), которые могут не вызывать blur
+setInterval(checkFocus, 500);
 
 // 5. Уничтожение контента при печати
 window.addEventListener('beforeprint', () => {
@@ -973,7 +994,6 @@ async function commitFiles(files, message) {
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // 1. Получаем актуальный HEAD ветки
       const refR = await fetch(`${api}/git/ref/heads/${CONFIG.branch}`, { headers });
       if (!refR.ok) throw new Error(`Failed to get branch ref: ${refR.status}`);
       const ref = await refR.json();
@@ -984,7 +1004,6 @@ async function commitFiles(files, message) {
       const headCommit = await commitR.json();
       const baseTree = headCommit.tree.sha;
 
-      // 2. Загружаем блобы
       const treeEntries = [];
       for (const f of files) {
         if (f.delete) {
@@ -1003,7 +1022,6 @@ async function commitFiles(files, message) {
         treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
       }
 
-      // 3. Создаём дерево
       const treeR = await fetch(`${api}/git/trees`, {
         method: 'POST', headers,
         body: JSON.stringify({ base_tree: baseTree, tree: treeEntries })
@@ -1011,7 +1029,6 @@ async function commitFiles(files, message) {
       if (!treeR.ok) throw new Error(`Failed to create tree: ${treeR.status}`);
       const tree = await treeR.json();
 
-      // 4. Создаём коммит
       const newCommitR = await fetch(`${api}/git/commits`, {
         method: 'POST', headers,
         body: JSON.stringify({ message, tree: tree.sha, parents: [headSha] })
@@ -1019,24 +1036,22 @@ async function commitFiles(files, message) {
       if (!newCommitR.ok) throw new Error(`Failed to create commit: ${newCommitR.status}`);
       const newCommit = await newCommitR.json();
 
-      // 5. Обновляем ссылку
       const updR = await fetch(`${api}/git/refs/heads/${CONFIG.branch}`, {
         method: 'PATCH', headers,
         body: JSON.stringify({ sha: newCommit.sha })
       });
 
       if (updR.ok) {
-        return newCommit.sha; // Успех
+        return newCommit.sha;
       }
 
-      // Обработка 422 (конфликт веток)
       if (updR.status === 422) {
         const errBody = await updR.text();
         if (errBody.toLowerCase().includes('fast forward')) {
           if (attempt < MAX_RETRIES) {
             console.warn(`[commitFiles] 422 fast-forward, retry ${attempt}/${MAX_RETRIES}...`);
-            await new Promise(r => setTimeout(r, 1000 * attempt)); // Задержка
-            continue; // Пробуем снова с новым headSha
+            await new Promise(r => setTimeout(r, 1000 * attempt));
+            continue;
           }
         }
         throw new Error(`Failed to update ref (422): ${errBody}`);
