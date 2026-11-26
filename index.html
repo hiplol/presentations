@@ -288,9 +288,9 @@ const CONFIG = {
   branch: "main",
   siteTitle: "Presentations",
 };
-// RAW используется для больших файлов (pdf, картинки), так как jsDelivr имеет лимит 20MB
+// RAW используется для мгновенного получения данных (обновляется в течение секунд)
 const RAW = `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/`;
-// DATA_URL используется для data.json (публичное чтение)
+// jsDelivr теперь используется только как запасной вариант, так как сильно кэширует
 const DATA_URL = `https://cdn.jsdelivr.net/gh/${CONFIG.owner}/${CONFIG.repo}@${CONFIG.branch}/data.json`;
 
 document.title = CONFIG.siteTitle;
@@ -352,16 +352,31 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 let DB = { presentations: [], vouchers: [] };
 let CURRENT = null;
 
-// Публичное чтение (через CDN). useApi=true — свежее чтение для админки (через GitHub API).
+// Публичное чтение. useApi=true — свежее чтение для админки (через GitHub API).
 async function loadData(useApi = false) {
   if (useApi) {
     try {
       DB = await fetchFreshData();
       return;
     } catch (e) {
-      console.warn('Fresh admin load failed, falling back to CDN:', e);
+      console.warn('Fresh admin load failed, falling back to raw:', e);
     }
   }
+  
+  // 1. Пытаемся получить свежие данные через raw.githubusercontent.com
+  // (в отличие от jsDelivr, raw обновляется почти мгновенно после коммита)
+  try {
+    const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) {
+      const d = await r.json();
+      DB = { presentations: d.presentations || [], vouchers: d.vouchers || [] };
+      return;
+    }
+  } catch (e) {
+    console.warn('RAW data fetch failed, trying jsDelivr fallback...', e);
+  }
+
+  // 2. Запасной вариант — jsDelivr (может отдавать старые данные, если у RAW сбой)
   try {
     const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (r.ok) {
@@ -377,7 +392,6 @@ async function loadData(useApi = false) {
 }
 
 // Свежие данные напрямую из GitHub (с токеном) — без CDN-кэша.
-// Это критично, иначе коммит может затереть недавние изменения.
 async function fetchFreshData() {
   const token = localStorage.getItem('gh_token');
   if (!token) throw new Error('Not authenticated');
@@ -1119,7 +1133,6 @@ document.getElementById('voucher-issue').onclick = async () => {
 
   btn.disabled = true;
   try {
-    // Свежие данные, чтобы не работать с устаревшим кэшем
     const fresh = await fetchFreshData();
     fresh.presentations = fresh.presentations || [];
     fresh.vouchers = fresh.vouchers || [];
