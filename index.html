@@ -226,7 +226,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
         After commit, the site is updated in ~5 seconds and visible on all devices.
       </p>
 
-      <label>Master password (wrap voucher keys; keep it safe) <span id="pw-warning">⚠️ Введите пароль для разблокировки</span></label>
+      <label>Master password (wrap voucher keys; keep it safe) <span id="pw-warning">⚠️ Введите правильный пароль для разблокировки</span></label>
       <input id="master-pw" type="password" placeholder="Enter master password">
 
       <!-- Блокируемая область -->
@@ -385,7 +385,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 // ================= DATA =================
 let DB = { presentations: [], vouchers: [] };
 let CURRENT = null;
-let watermarkReady = false; // Объявлено тут, чтобы не было ошибки инициализации
+let watermarkReady = false;
 
 async function loadData(useApi = false) {
   if (useApi) {
@@ -937,7 +937,7 @@ async function showAdmin() {
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-panel').classList.remove('hidden');
     
-    // === ЛОГИКА БЛОКИРОВКИ АДМИНКИ ===
+    // Логика блокировки визуала
     const masterPwInput = document.getElementById('master-pw');
     const lockedArea = document.getElementById('admin-locked-area');
     const pwWarning = document.getElementById('pw-warning');
@@ -952,11 +952,9 @@ async function showAdmin() {
         }
     }
 
-    // Удаляем старый слушатель, чтобы не дублировался при переходах
     masterPwInput.removeEventListener('input', updateAdminLockState);
     masterPwInput.addEventListener('input', updateAdminLockState);
-    updateAdminLockState(); // Проверяем текущее состояние
-    // =================================
+    updateAdminLockState();
 
     await loadData(true);
 
@@ -1004,11 +1002,24 @@ async function showAdmin() {
 }
 
 window.deletePres = async (id) => {
+  const master = document.getElementById('master-pw').value;
+  if (!master) return alert("Введите мастер-пароль (поле вверху), чтобы разблокировать удаление.");
+
   if (!confirm('Delete this presentation?\n\n• All files in presentations/' + id + '/ will be removed from the repo\n• All its vouchers will be revoked\n\nThis cannot be undone.')) return;
+  
   try {
     const fresh = await fetchFreshData();
     const pres = fresh.presentations.find(p => p.id === id);
     if (!pres) throw new Error('Presentation not found in data.json');
+
+    // Криптографическая проверка мастер-пароля для данной презентации
+    if (pres.kek_check && pres.source && pres.source.salt) {
+      const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+      const check = await Crypto.sha256Hex(hex(derivedKek));
+      if (check !== pres.kek_check) {
+        throw new Error('Неверный мастер-пароль. Удаление отменено.');
+      }
+    }
 
     const treeInfo = await listRepoFiles();
     if (treeInfo.truncated) {
@@ -1031,17 +1042,32 @@ window.deletePres = async (id) => {
     alert(`Deleted "${pres.title}"\nFiles removed: ${toDelete.length}\nVouchers revoked: ${revokedCount}`);
     await showAdmin();
   } catch (e) {
-    alert('Error deleting: ' + e.message);
+    alert('Error: ' + e.message);
     console.error(e);
   }
 };
 
 window.deleteVoucher = async (vid) => {
+  const master = document.getElementById('master-pw').value;
+  if (!master) return alert("Введите мастер-пароль (поле вверху), чтобы разблокировать отзыв ваучера.");
+
   if (!confirm('Revoke this voucher? It will immediately stop working.')) return;
+
   try {
     const fresh = await fetchFreshData();
     const v = (fresh.vouchers || []).find(x => x.id === vid);
     if (!v) throw new Error('Voucher not found');
+
+    // Находим презентацию этого ваучера для проверки пароля
+    const pres = fresh.presentations.find(p => p.id === v.presentation_id);
+    if (pres && pres.kek_check && pres.source && pres.source.salt) {
+      const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+      const check = await Crypto.sha256Hex(hex(derivedKek));
+      if (check !== pres.kek_check) {
+        throw new Error('Неверный мастер-пароль. Отзыв ваучера отменен.');
+      }
+    }
+
     fresh.vouchers = fresh.vouchers.filter(x => x.id !== vid);
     await commitFiles(
       [{ path: 'data.json', text: JSON.stringify(fresh, null, 2) }],
@@ -1050,7 +1076,7 @@ window.deleteVoucher = async (vid) => {
     alert('Voucher revoked.');
     await showAdmin();
   } catch (e) {
-    alert('Error revoking voucher: ' + e.message);
+    alert('Error: ' + e.message);
   }
 };
 
