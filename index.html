@@ -193,7 +193,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
         <button id="logout-btn" class="btn danger" style="padding: 6px 12px; font-size: 12px;">Logout</button>
       </div>
       <p class="muted" style="font-size:13px; margin-top:0;">
-        After commit, the site is updated in ~30 seconds and visible on all devices.
+        After commit, the site is updated in ~5 seconds and visible on all devices.
       </p>
 
       <label>Master password (wrap voucher keys; keep it safe)</label>
@@ -288,7 +288,10 @@ const CONFIG = {
   branch: "main",
   siteTitle: "Presentations",
 };
+// RAW используется для больших файлов (pdf, картинки), так как jsDelivr имеет лимит 20MB
 const RAW = `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/`;
+// DATA_URL используется для data.json, так как jsDelivr обновляет кэш мгновенно
+const DATA_URL = `https://cdn.jsdelivr.net/gh/${CONFIG.owner}/${CONFIG.repo}@${CONFIG.branch}/data.json`;
 
 document.title = CONFIG.siteTitle;
 document.getElementById('page-title').textContent = CONFIG.siteTitle;
@@ -351,14 +354,17 @@ let CURRENT = null;
 
 async function loadData() {
   try {
-    const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
+    const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (r.ok) {
       const d = await r.json();
       DB = { presentations: d.presentations || [], vouchers: d.vouchers || [] };
     } else {
       DB = { presentations: [], vouchers: [] };
     }
-  } catch (e) { DB = { presentations: [], vouchers: [] }; }
+  } catch (e) {
+    console.error('loadData error:', e);
+    DB = { presentations: [], vouchers: [] };
+  }
 }
 
 // ================= ROUTER =================
@@ -887,9 +893,9 @@ async function commitFiles(files, message) {
   return newCommit.sha;
 }
 
-// Свежие данные прямо из репозитория (не из кэша браузера)
+// Свежие данные прямо из репозитория (через jsDelivr, чтобы избежать кэша GitHub)
 async function fetchFreshData() {
-  const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
+  const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
   if (!r.ok) return { presentations: [], vouchers: [] };
   return await r.json();
 }
@@ -1021,7 +1027,7 @@ document.getElementById('upload-btn').onclick = async () => {
     logLine('Vouchers (save now — never shown again):', 'success');
     codes.forEach(c => logLine(`  ${c}`, 'success'));
     logLine('');
-    logLine(`Live in ~30s: https://${CONFIG.owner}.github.io/${CONFIG.repo}/#v/${id}`);
+    logLine(`Live in ~5s: https://${CONFIG.owner}.github.io/${CONFIG.repo}/#v/${id}`);
 
     adminPptx = null; adminPdf = null;
     document.getElementById('file-list').innerHTML = '';
