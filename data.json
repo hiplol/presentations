@@ -19,15 +19,5 @@
       }
     }
   ],
-  "vouchers": [
-    {
-      "id": "afe8ebe240",
-      "presentation_id": "cf9f28f8e4",
-      "salt": "4rRSS98LvByUfsD1PIkJfg==",
-      "iv": "vIHdZdvUWMJ+G67M",
-      "encrypted_key": "qEy0222NtTlVmSb+s6OZg+nSzjJdnAqGCT7pjiyhF+DlpQikhJ7BqhEwRC3IuTyg",
-      "created": "2026-11-26T17:55:43",
-      "note": ""
-    }
-  ]
+  "vouchers": []
 }
