@@ -4,56 +4,60 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Presentations</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root{--bg:#0b0f0a;--bg2:#121712;--line:#1f2a1f;--accent:#a6ff3a;--text:#f2f7ec;--muted:#8ca38a}
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif}
 a{color:var(--accent);text-decoration:none}
-.topbar{display:flex;align-items:center;gap:12px;padding:14px 22px;
-  background:var(--bg2);border-bottom:1px solid var(--line);
-  position:sticky;top:0;z-index:50}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--bg2);
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
 .topbar h1{font-size:18px;margin:0;flex:1;font-weight:600;text-align:center}
-.back{background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px}
+.back{background:none;border:0;color:var(--muted);cursor:pointer}
 main{padding:24px;max-width:1200px;margin:0 auto}
 .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .card{display:flex;flex-direction:column;min-height:140px;background:var(--bg2);
-  border:1px solid var(--line);border-radius:12px;padding:18px;color:var(--text);
-  transition:border-color .15s,transform .15s}
+  border:1px solid var(--line);border-radius:12px;padding:18px;cursor:pointer;transition:.15s}
 .card:hover{border-color:var(--accent);transform:translateY(-2px)}
-.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-head{display:flex;justify-content:space-between;gap:8px}
 .card-title{font-weight:600;font-size:16px}
-.card-lock{color:var(--accent)}
 .card-desc{color:var(--muted);font-size:14px;margin:8px 0;flex:1}
 .card-foot{color:var(--muted);font-size:12px}
-.muted{color:var(--muted)}
-.error{color:#ff6b6b;min-height:1.2em}
-.btn{background:var(--accent);color:#0b0f0a;border:0;padding:9px 16px;
-  border-radius:8px;cursor:pointer;font-weight:600;font-size:14px}
-.btn:hover{background:#b9ff66}
+.muted{color:var(--muted)}.error{color:#ff6b6b;min-height:1.2em}
+.btn{background:var(--accent);color:#0b0f0a;border:0;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{background:#b9ff66}.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
 .hidden{display:none!important}
-.lock-screen{max-width:380px;margin:80px auto;text-align:center;
-  background:var(--bg2);border:1px solid var(--line);padding:32px;border-radius:12px}
-.lock-screen input{width:100%;padding:10px;margin:12px 0;background:var(--bg);
+.lock-screen{max-width:420px;margin:60px auto;text-align:center;background:var(--bg2);
+  border:1px solid var(--line);padding:32px;border-radius:12px}
+.lock-screen input{width:100%;padding:10px;margin:8px 0;background:var(--bg);
   border:1px solid var(--line);color:var(--text);border-radius:8px}
 .viewer-page{user-select:none;-webkit-user-select:none}
 .pages{display:flex;flex-direction:column;gap:20px;align-items:center;padding-bottom:80px}
-.pdf-page{box-shadow:0 4px 24px rgba(0,0,0,.4);background:#fff;
-  pointer-events:none;user-select:none}
-.watermark-layer{position:fixed;inset:0;pointer-events:none;
-  background-repeat:repeat;z-index:30;opacity:.9}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;
-  align-items:center;justify-content:center;z-index:100;padding:20px}
-.modal-inner{background:var(--bg2);border:1px solid var(--line);
-  border-radius:12px;padding:24px;max-width:480px;width:100%}
+.pdf-page{box-shadow:0 4px 24px rgba(0,0,0,.4);background:#fff;pointer-events:none}
+.ppt-render{max-width:960px;width:100%;background:#fff;border-radius:6px;overflow:hidden;
+  box-shadow:0 4px 24px rgba(0,0,0,.4);pointer-events:none}
+.watermark-layer{position:fixed;inset:0;pointer-events:none;background-repeat:repeat;z-index:30;opacity:.9}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;
+  justify-content:center;z-index:100;padding:20px}
+.modal-inner{background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+  padding:24px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto}
 .modal-inner h2{margin-top:0}
-.modal-inner input,.modal-inner textarea{width:100%;padding:10px;margin:6px 0;
-  background:var(--bg);border:1px solid var(--line);color:var(--text);
-  border-radius:8px;font-family:inherit}
+.modal-inner input,.modal-inner textarea,.modal-inner select{width:100%;padding:10px;
+  margin:6px 0;background:var(--bg);border:1px solid var(--line);color:var(--text);
+  border-radius:8px;font-family:inherit;font-size:14px}
 .modal-inner textarea{min-height:80px;resize:vertical}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.modal-inner label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.dropzone{border:2px dashed var(--line);border-radius:10px;padding:24px;text-align:center;
+  color:var(--muted);margin:10px 0;cursor:pointer;transition:.15s}
+.dropzone.dragover{border-color:var(--accent);background:rgba(166,255,58,.05)}
+.log{font-family:ui-monospace,monospace;font-size:12px;background:var(--bg);
+  border:1px solid var(--line);border-radius:8px;padding:12px;max-height:200px;
+  overflow-y:auto;margin-top:12px;white-space:pre-wrap;color:var(--muted)}
+.voucher-list{font-family:ui-monospace,monospace;font-size:12px;background:var(--bg);
+  border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:8px;
+  word-break:break-all;color:var(--accent)}
 @media print{body *{display:none!important}
   body::before{content:"Printing is disabled";display:block!important;color:#000;
     padding:40px;font-size:24px}}
@@ -63,13 +67,12 @@ main{padding:24px;max-width:1200px;margin:0 auto}
 <header class="topbar">
   <button id="back-btn" class="back hidden">← Back</button>
   <h1 id="page-title">Presentations</h1>
+  <button id="admin-btn" class="btn ghost">Admin</button>
   <button id="request-btn" class="btn ghost hidden">Request copy</button>
 </header>
 
 <main>
-  <section id="grid-view">
-    <div id="grid" class="grid"></div>
-  </section>
+  <section id="grid-view"><div id="grid" class="grid"></div></section>
 
   <section id="viewer-view" class="hidden viewer-page">
     <div id="lock-screen" class="lock-screen hidden">
@@ -79,7 +82,67 @@ main{padding:24px;max-width:1200px;margin:0 auto}
       <button id="pw-submit" class="btn">Open</button>
       <p id="pw-error" class="error"></p>
     </div>
-    <div id="pages" class="pages"></div>
+    <div id="render-area"></div>
+  </section>
+
+  <section id="admin-view" class="hidden">
+    <div id="admin-login" class="lock-screen">
+      <h2>Admin setup</h2>
+      <p class="muted" style="text-align:left;font-size:13px">
+        One-time setup: create a GitHub fine-grained PAT with
+        <b>Contents: Read and write</b> access to this repository and paste it here.
+        Stored in localStorage of this browser only.
+      </p>
+      <input id="pat-input" type="password" placeholder="github_pat_… or ghp_…">
+      <button id="pat-save" class="btn">Save token</button>
+      <p id="pat-status" class="muted"></p>
+    </div>
+
+    <div id="admin-panel" class="hidden">
+      <h2 style="margin-top:0">Add presentation</h2>
+      <p class="muted" style="font-size:13px">
+        After commit, the site is updated in ~30 seconds and visible on all devices.
+      </p>
+
+      <label>Master password (wrap voucher keys; keep it safe)</label>
+      <input id="master-pw" type="password" placeholder="Master password">
+
+      <label>Drop .pptx (required) and .pdf (optional, better view quality)</label>
+      <div id="dropzone" class="dropzone">
+        Drop files here or click to select
+        <input id="file-input" type="file" multiple accept=".pptx,.pdf" hidden>
+      </div>
+      <div id="file-list" class="muted" style="font-size:13px"></div>
+
+      <label>Title</label>
+      <input id="f-title" placeholder="Q4 Report 2025">
+
+      <label>Description</label>
+      <textarea id="f-desc" placeholder="Optional"></textarea>
+
+      <label>View password (leave empty for public)</label>
+      <input id="f-password" type="password" placeholder="Optional">
+
+      <label>Vouchers</label>
+      <input id="f-vouchers" type="number" value="1" min="1" max="20">
+
+      <div class="modal-actions">
+        <button id="upload-btn" class="btn">Add presentation</button>
+      </div>
+      <div id="log" class="log hidden"></div>
+
+      <hr style="border:0;border-top:1px solid var(--line);margin:30px 0">
+
+      <h2>Issue another voucher</h2>
+      <label>Presentation</label>
+      <select id="voucher-pres"></select>
+      <label>Note</label>
+      <input id="voucher-note" placeholder="for Ivan / Telegram">
+      <div class="modal-actions">
+        <button id="voucher-issue" class="btn">Issue voucher</button>
+      </div>
+      <div id="voucher-out" class="voucher-list hidden"></div>
+    </div>
   </section>
 </main>
 
@@ -88,12 +151,12 @@ main{padding:24px;max-width:1200px;margin:0 auto}
 <div id="modal" class="modal hidden">
   <div class="modal-inner">
     <h2>Copy request</h2>
-    <p class="muted">Leave your contact — I'll get back to you after approval.</p>
-    <input id="req-contact" placeholder="Email or Telegram">
+    <p class="muted">Copies the request text to clipboard — send it to the author manually.</p>
+    <input id="req-contact" placeholder="Who is asking / contact">
     <textarea id="req-reason" placeholder="Reason (optional)"></textarea>
     <div class="modal-actions">
       <button id="req-cancel" class="btn ghost">Cancel</button>
-      <button id="req-send" class="btn">Send</button>
+      <button id="req-send" class="btn">Copy request</button>
     </div>
     <p id="req-status" class="muted"></p>
   </div>
@@ -103,7 +166,7 @@ main{padding:24px;max-width:1200px;margin:0 auto}
   <div class="modal-inner">
     <h2>Redeem voucher</h2>
     <p class="muted">Enter the code you were given.</p>
-    <input id="voucher-input" placeholder="XXXX-XXXX-XXXX">
+    <input id="voucher-input" placeholder="XXXX...">
     <div class="modal-actions">
       <button id="voucher-cancel" class="btn ghost">Cancel</button>
       <button id="voucher-go" class="btn">Download .pptx</button>
@@ -113,64 +176,83 @@ main{padding:24px;max-width:1200px;margin:0 auto}
 </div>
 
 <script>
-// ================= CONFIG =================
 const CONFIG = {
-  siteTitle: "My presentations",
-  formspreeEndpoint: "",       // optional: https://formspree.io/f/xxxxxxx
-  contactEmail: "you@example.com",
+  owner: "hiplol",
+  repo: "presentations",
+  branch: "main",
+  siteTitle: "Presentations",
 };
+const RAW = `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/`;
 document.title = CONFIG.siteTitle;
 document.getElementById('page-title').textContent = CONFIG.siteTitle;
-
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+document.getElementById('admin-btn').onclick = () => location.hash = '#admin';
 
 // ================= CRYPTO =================
 const Crypto = (() => {
   const enc = new TextEncoder();
   const ITER = 200000;
-  async function deriveKey(password, salt) {
-    const km = await crypto.subtle.importKey(
-      'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256' },
-      km, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
-    );
+  async function deriveRaw(pw, salt) {
+    const km = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256' }, km, 256));
   }
-  async function decrypt(ctBuf, password, salt, iv) {
-    const key = await deriveKey(password, salt);
-    return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ctBuf);
+  async function aesKey(raw, usage) {
+    return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, [usage]);
+  }
+  async function encPw(bytes, pw, salt, iv) {
+    const k = await aesKey(await deriveRaw(pw, salt), 'encrypt');
+    return new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, bytes));
+  }
+  async function decPw(ct, pw, salt, iv) {
+    const k = await aesKey(await deriveRaw(pw, salt), 'decrypt');
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, k, ct);
+  }
+  async function encRaw(bytes, raw, iv) {
+    const k = await aesKey(raw, 'encrypt');
+    return new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, bytes));
+  }
+  async function decRaw(ct, raw, iv) {
+    const k = await aesKey(raw, 'decrypt');
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, k, ct);
+  }
+  async function sha256Hex(s) {
+    const b = await crypto.subtle.digest('SHA-256', enc.encode(s));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
   }
   function b64ToBuf(b64) {
     const bin = atob(b64); const buf = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
     return buf;
   }
-  async function sha256Hex(str) {
-    const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
-    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  function bufToB64(buf) {
+    const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    let bin = ''; const chunk = 0x8000;
+    for (let i = 0; i < u8.length; i += chunk)
+      bin += String.fromCharCode.apply(null, u8.subarray(i, i + chunk));
+    return btoa(bin);
   }
-  return { decrypt, b64ToBuf, sha256Hex };
+  return { deriveRaw, encPw, decPw, encRaw, decRaw, sha256Hex, b64ToBuf, bufToB64 };
 })();
 
-// ================= STATE =================
+const rand = n => [...crypto.getRandomValues(new Uint8Array(n))]
+  .map(b => b.toString(16).padStart(2, '0')).join('');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ================= DATA =================
 let DB = { presentations: [], vouchers: [] };
 let CURRENT = null;
 
 async function loadData() {
   try {
-    const r = await fetch('data.json', { cache: 'no-store' });
-    DB = await r.json();
-    if (!DB.presentations) DB.presentations = [];
-    if (!DB.vouchers) DB.vouchers = [];
-  } catch (e) {}
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
+    const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) {
+      const d = await r.json();
+      DB = { presentations: d.presentations || [], vouchers: d.vouchers || [] };
+    } else {
+      DB = { presentations: [], vouchers: [] };
+    }
+  } catch (e) { DB = { presentations: [], vouchers: [] }; }
 }
 
 // ================= ROUTER =================
@@ -178,8 +260,9 @@ window.addEventListener('hashchange', route);
 route();
 
 async function route() {
-  const m = location.hash.match(/^#v\/(.+)$/);
-  if (m) await showViewer(decodeURIComponent(m[1]));
+  const h = location.hash;
+  if (h.startsWith('#v/')) await showViewer(decodeURIComponent(h.slice(3)));
+  else if (h === '#admin') await showAdmin();
   else await showGrid();
 }
 
@@ -187,6 +270,7 @@ async function route() {
 async function showGrid() {
   document.getElementById('grid-view').classList.remove('hidden');
   document.getElementById('viewer-view').classList.add('hidden');
+  document.getElementById('admin-view').classList.add('hidden');
   document.getElementById('watermark-layer').classList.add('hidden');
   document.getElementById('back-btn').classList.add('hidden');
   document.getElementById('request-btn').classList.add('hidden');
@@ -201,18 +285,19 @@ async function showGrid() {
     grid.innerHTML = '<p class="muted">No presentations yet.</p>';
     return;
   }
-  for (const p of DB.presentations) {
-    const a = document.createElement('a');
-    a.className = 'card';
-    a.href = '#v/' + encodeURIComponent(p.id);
-    a.innerHTML = `
+  DB.presentations.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+  for (const p of DB.presentations.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''))) {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.onclick = () => location.hash = '#v/' + encodeURIComponent(p.id);
+    el.innerHTML = `
       <div class="card-head">
-        <span class="card-title">${escapeHtml(p.title)}</span>
-        <span class="card-lock">${p.locked ? '🔒' : ''}</span>
+        <span class="card-title">${esc(p.title)}</span>
+        <span>${p.locked ? '🔒' : ''}</span>
       </div>
-      <p class="card-desc">${escapeHtml(p.description || '')}</p>
-      <div class="card-foot">${escapeHtml(p.created || '')}</div>`;
-    grid.appendChild(a);
+      <p class="card-desc">${esc(p.description || '')}</p>
+      <div class="card-foot">${esc(p.created || '')}</div>`;
+    grid.appendChild(el);
   }
 }
 
@@ -220,68 +305,87 @@ async function showGrid() {
 async function showViewer(pid) {
   document.getElementById('grid-view').classList.add('hidden');
   document.getElementById('viewer-view').classList.remove('hidden');
+  document.getElementById('admin-view').classList.add('hidden');
   document.getElementById('back-btn').classList.remove('hidden');
+  document.getElementById('back-btn').onclick = () => location.hash = '';
   document.getElementById('request-btn').classList.remove('hidden');
-  document.getElementById('pages').innerHTML = '';
+  document.getElementById('render-area').innerHTML = '';
   document.getElementById('lock-screen').classList.add('hidden');
   document.getElementById('pw-error').textContent = '';
 
   await loadData();
   CURRENT = DB.presentations.find(p => p.id === pid);
-  if (!CURRENT) {
-    document.getElementById('page-title').textContent = 'Not found';
-    return;
-  }
+  if (!CURRENT) { document.getElementById('page-title').textContent = 'Not found'; return; }
   document.getElementById('page-title').textContent = CURRENT.title;
   document.title = CURRENT.title;
 
   await buildWatermark();
   document.getElementById('watermark-layer').classList.remove('hidden');
 
-  if (CURRENT.locked) {
-    document.getElementById('lock-screen').classList.remove('hidden');
-  } else {
-    try { await renderPdf(null); }
-    catch (e) { console.error(e); }
-  }
+  if (CURRENT.locked) document.getElementById('lock-screen').classList.remove('hidden');
+  else { try { await renderSlides(null); } catch (e) { console.error(e); } }
 }
 
 async function buildWatermark() {
-  let ip = 'IP ?';
+  let ip = '?';
   try {
     const r = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
     ip = (await r.json()).ip;
   } catch (e) {}
   const fp = await Crypto.sha256Hex(
     navigator.userAgent + '|' + screen.width + 'x' + screen.height +
-    '|' + Intl.DateTimeFormat().resolvedOptions().timeZone
-  );
-  const now = new Date().toLocaleString('en-US');
-  const text = `${ip}  ·  ${fp.slice(0, 8)}  ·  ${now}`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="260"><text x="50%" y="50%" font-family="sans-serif" font-size="18" fill="rgba(120,120,120,0.16)" text-anchor="middle" transform="rotate(-30 260 130)">${text}</text></svg>`;
+    '|' + Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const text = `${ip}  ·  ${fp.slice(0, 8)}  ·  ${new Date().toLocaleString('en-US')}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="260">
+    <text x="50%" y="50%" font-family="sans-serif" font-size="18"
+      fill="rgba(120,120,120,0.16)" text-anchor="middle"
+      transform="rotate(-30 260 130)">${text}</text></svg>`;
   document.getElementById('watermark-layer').style.backgroundImage =
     `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
 }
 
-async function renderPdf(password) {
-  let pdfBytes;
-  const r = await fetch(CURRENT.pdf.file, { cache: 'no-store' });
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+function loadCss(href) {
+  return new Promise(res => {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet'; l.href = href; l.onload = res;
+    document.head.appendChild(l);
+  });
+}
+
+async function renderSlides(password) {
+  const usePdf = !!CURRENT.pdf;
+  const meta = usePdf ? CURRENT.pdf : CURRENT.pptxView;
+  const r = await fetch(RAW + meta.file + '?t=' + Date.now(), { cache: 'no-store' });
   if (!r.ok) throw new Error('fetch failed');
-
-  if (CURRENT.pdf.encrypted) {
-    const ctBuf = await r.arrayBuffer();
-    const salt = Crypto.b64ToBuf(CURRENT.pdf.salt);
-    const iv = Crypto.b64ToBuf(CURRENT.pdf.iv);
-    pdfBytes = await Crypto.decrypt(ctBuf, password, salt, iv);
-  } else {
-    pdfBytes = await r.arrayBuffer();
+  let buf = await r.arrayBuffer();
+  if (meta.encrypted) {
+    try { buf = await Crypto.decPw(buf, password, Crypto.b64ToBuf(meta.salt), Crypto.b64ToBuf(meta.iv)); }
+    catch (e) { throw new Error('bad password'); }
   }
-
   document.getElementById('lock-screen').classList.add('hidden');
-  const pagesEl = document.getElementById('pages');
-  pagesEl.innerHTML = '';
+  const area = document.getElementById('render-area');
+  area.innerHTML = '';
+  if (usePdf) await renderPdf(buf);
+  else await renderPptx(buf);
+}
 
-  const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+async function renderPdf(bytes) {
+  if (!window.pdfjsLib) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'pages';
+  document.getElementById('render-area').appendChild(wrap);
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
   const scale = Math.min(2, window.devicePixelRatio || 1);
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
@@ -290,9 +394,30 @@ async function renderPdf(password) {
     c.className = 'pdf-page';
     c.width = vp.width; c.height = vp.height;
     c.style.width = (vp.width / scale) + 'px';
-    pagesEl.appendChild(c);
+    wrap.appendChild(c);
     await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
   }
+}
+
+async function renderPptx(bytes) {
+  if (!window.jQuery) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js');
+  if (!window.pptxToHtml) {
+    await loadCss('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/css/pptxjs.css');
+    await loadScript('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/divs2slides.js');
+    await loadScript('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/pptxjs.js');
+  }
+  const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+  const url = URL.createObjectURL(blob);
+  const box = document.createElement('div');
+  box.className = 'ppt-render'; box.id = 'ppt-box';
+  document.getElementById('render-area').appendChild(box);
+  await new Promise(resolve => {
+    $('#ppt-box').pptxToHtml({
+      pptxFileUrl: url, slideMode: false, keyBoardShortCut: false,
+      slideModeConfig: { on: resolve }
+    });
+    setTimeout(resolve, 8000);
+  });
 }
 
 // ================= PROTECTION =================
@@ -302,118 +427,350 @@ document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) e.preventDefault();
 });
-window.addEventListener('beforeprint', () => {
-  document.getElementById('pages').style.display = 'none';
-});
-window.addEventListener('afterprint', () => {
-  document.getElementById('pages').style.display = '';
-});
+window.addEventListener('beforeprint', () => document.getElementById('render-area').style.display = 'none');
+window.addEventListener('afterprint', () => document.getElementById('render-area').style.display = '');
 
 // ================= PASSWORD =================
-document.getElementById('pw-submit').addEventListener('click', tryUnlock);
-document.getElementById('pw-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') tryUnlock();
-});
+document.getElementById('pw-submit').onclick = tryUnlock;
+document.getElementById('pw-input').onkeydown = e => { if (e.key === 'Enter') tryUnlock(); };
 async function tryUnlock() {
-  const pw = document.getElementById('pw-input').value;
-  const err = document.getElementById('pw-error');
-  err.textContent = '';
-  try {
-    await renderPdf(pw);
-  } catch (e) {
-    err.textContent = 'Incorrect password';
-  }
+  try { await renderSlides(document.getElementById('pw-input').value); }
+  catch (e) { document.getElementById('pw-error').textContent = 'Incorrect password'; }
 }
 
-// ================= REQUEST =================
+// ================= COPY REQUEST =================
 const modal = document.getElementById('modal');
 document.getElementById('request-btn').onclick = () => modal.classList.remove('hidden');
 document.getElementById('req-cancel').onclick = () => modal.classList.add('hidden');
-
 document.getElementById('req-send').onclick = async () => {
   const contact = document.getElementById('req-contact').value.trim();
   const reason = document.getElementById('req-reason').value.trim();
   const status = document.getElementById('req-status');
-  if (!contact) { status.textContent = 'Please provide a contact'; return; }
-  status.textContent = 'Sending…';
-
-  const payload = {
-    presentation_id: CURRENT.id,
-    presentation_title: CURRENT.title,
-    contact, reason, page: location.href,
-  };
-
-  try {
-    if (CONFIG.formspreeEndpoint) {
-      await fetch(CONFIG.formspreeEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      status.textContent = 'Sent. Awaiting reply.';
-    } else {
-      const subj = encodeURIComponent(`Copy request: ${CURRENT.title}`);
-      const body = encodeURIComponent(
-        `Presentation: ${CURRENT.title}\nID: ${CURRENT.id}\nContact: ${contact}\nReason: ${reason}`
-      );
-      location.href = `mailto:${CONFIG.contactEmail}?subject=${subj}&body=${body}`;
-      status.textContent = 'Mail client opened.';
-    }
-    setTimeout(() => vModal.classList.remove('hidden'), 500);
-  } catch (e) {
-    status.textContent = 'Send failed';
-  }
+  if (!contact) { status.textContent = 'Contact required'; return; }
+  const text = `Copy request\n\nPresentation: ${CURRENT.title}\nID: ${CURRENT.id}\n` +
+    `Requester: ${contact}\nReason: ${reason || '—'}`;
+  try { await navigator.clipboard.writeText(text); status.textContent = 'Copied to clipboard.'; }
+  catch (e) { status.textContent = text; }
 };
 
-// ================= VOUCHER =================
+// ================= VOUCHER REDEEM =================
 const vModal = document.getElementById('modal-voucher');
 document.getElementById('voucher-cancel').onclick = () => vModal.classList.add('hidden');
-
 document.getElementById('voucher-go').onclick = async () => {
   const code = document.getElementById('voucher-input').value.trim();
   const status = document.getElementById('voucher-status');
   status.textContent = 'Checking…';
-
   try {
     for (const v of DB.vouchers) {
       if (v.presentation_id !== CURRENT.id) continue;
       try {
-        // 1. Derive KEK from voucher code
-        const vSalt = Crypto.b64ToBuf(v.salt);
-        const vIv   = Crypto.b64ToBuf(v.iv);
-        const encKek = Crypto.b64ToBuf(v.encrypted_key);
-        const kekBuf = await Crypto.decrypt(encKek, code, vSalt, vIv);
-
-        // 2. Import KEK
-        const kekKey = await crypto.subtle.importKey(
-          'raw', kekBuf, { name: 'AES-GCM' }, false, ['decrypt']
-        );
-
-        // 3. Decrypt source.pptx
-        const sRes = await fetch(CURRENT.source.file, { cache: 'no-store' });
+        const kek = await Crypto.decPw(Crypto.b64ToBuf(v.encrypted_key), code,
+          Crypto.b64ToBuf(v.salt), Crypto.b64ToBuf(v.iv));
+        const sRes = await fetch(RAW + CURRENT.source.file + '?t=' + Date.now(), { cache: 'no-store' });
         const sCt = await sRes.arrayBuffer();
-        const sIv = Crypto.b64ToBuf(CURRENT.source.iv);
-        const pptxBuf = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: sIv }, kekKey, sCt
-        );
-
-        // 4. Download
-        const blob = new Blob([pptxBuf], {
-          type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        });
+        const pptx = await Crypto.decRaw(sCt, new Uint8Array(kek),
+          Crypto.b64ToBuf(CURRENT.source.iv));
+        const blob = new Blob([pptx], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = CURRENT.title + '.pptx';
-        a.click();
+        a.href = url; a.download = CURRENT.title + '.pptx'; a.click();
         URL.revokeObjectURL(url);
         status.textContent = 'File downloaded.';
         return;
-      } catch (e) { /* not this voucher — try next */ }
+      } catch (e) {}
     }
     status.textContent = 'Voucher does not match.';
-  } catch (e) {
-    status.textContent = 'Error: ' + e.message;
+  } catch (e) { status.textContent = 'Error: ' + e.message; }
+};
+
+// ================= ADMIN =================
+async function showAdmin() {
+  document.getElementById('grid-view').classList.add('hidden');
+  document.getElementById('viewer-view').classList.add('hidden');
+  document.getElementById('admin-view').classList.remove('hidden');
+  document.getElementById('watermark-layer').classList.add('hidden');
+  document.getElementById('back-btn').classList.remove('hidden');
+  document.getElementById('back-btn').onclick = () => location.hash = '';
+  document.getElementById('request-btn').classList.add('hidden');
+  document.getElementById('page-title').textContent = 'Admin';
+  document.title = 'Admin';
+
+  const token = localStorage.getItem('gh_token');
+  if (token) {
+    document.getElementById('admin-login').classList.add('hidden');
+    document.getElementById('admin-panel').classList.remove('hidden');
+    await loadData();
+    const sel = document.getElementById('voucher-pres');
+    sel.innerHTML = DB.presentations.map(p =>
+      `<option value="${p.id}">${esc(p.title)}</option>`).join('')
+      || '<option value="">(no presentations)</option>';
+  } else {
+    document.getElementById('admin-login').classList.remove('hidden');
+    document.getElementById('admin-panel').classList.add('hidden');
   }
+}
+
+document.getElementById('pat-save').onclick = async () => {
+  const tok = document.getElementById('pat-input').value.trim();
+  const st = document.getElementById('pat-status');
+  if (!tok) { st.textContent = 'Token required'; return; }
+  st.textContent = 'Checking…';
+  try {
+    const r = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`, {
+      headers: { Authorization: `Bearer ${tok}` }
+    });
+    if (!r.ok) throw new Error(r.status);
+    localStorage.setItem('gh_token', tok);
+    await showAdmin();
+  } catch (e) { st.textContent = 'Invalid token or no access'; }
+};
+
+let adminFiles = { pptx: null, pdf: null };
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+dropzone.onclick = () => fileInput.click();
+dropzone.ondragover = e => { e.preventDefault(); dropzone.classList.add('dragover'); };
+dropzone.ondragleave = () => dropzone.classList.remove('dragover');
+dropzone.ondrop = e => { e.preventDefault(); dropzone.classList.remove('dragover'); pick(e.dataTransfer.files); };
+fileInput.onchange = e => pick(e.target.files);
+
+function pick(files) {
+  adminFiles = { pptx: null, pdf: null };
+  for (const f of files) {
+    if (f.name.toLowerCase().endsWith('.pptx')) adminFiles.pptx = f;
+    else if (f.name.toLowerCase().endsWith('.pdf')) adminFiles.pdf = f;
+  }
+  const items = [];
+  if (adminFiles.pptx) items.push(`📊 ${adminFiles.pptx.name} (${(adminFiles.pptx.size/1024/1024).toFixed(1)} MB)`);
+  if (adminFiles.pdf) items.push(`📄 ${adminFiles.pdf.name} (${(adminFiles.pdf.size/1024/1024).toFixed(1)} MB)`);
+  document.getElementById('file-list').innerHTML = items.join('<br>') || 'No files selected';
+  const t = document.getElementById('f-title');
+  if (adminFiles.pptx && !t.value) t.value = adminFiles.pptx.name.replace(/\.pptx$/i, '');
+}
+
+function logLine(msg) {
+  const el = document.getElementById('log');
+  el.classList.remove('hidden');
+  el.textContent += msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+// ================= GITHUB COMMIT =================
+async function commitFiles(files, message) {
+  const token = localStorage.getItem('gh_token');
+  const api = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'Content-Type': 'application/json'
+  };
+
+  const refR = await fetch(`${api}/git/ref/heads/${CONFIG.branch}`, { headers });
+  if (!refR.ok) throw new Error(`ref: ${refR.status}`);
+  const ref = await refR.json();
+  const headSha = ref.object.sha;
+
+  const commitR = await fetch(`${api}/git/commits/${headSha}`, { headers });
+  const headCommit = await commitR.json();
+  const baseTree = headCommit.tree.sha;
+
+  const treeEntries = [];
+  for (const f of files) {
+    const content = f.text !== undefined
+      ? Crypto.bufToB64(new TextEncoder().encode(f.text))
+      : Crypto.bufToB64(f.data);
+    const blobR = await fetch(`${api}/git/blobs`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ content, encoding: 'base64' })
+    });
+    if (!blobR.ok) throw new Error(`blob ${f.path}: ${blobR.status} ${await blobR.text()}`);
+    const blob = await blobR.json();
+    treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
+  }
+
+  const treeR = await fetch(`${api}/git/trees`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ base_tree: baseTree, tree: treeEntries })
+  });
+  if (!treeR.ok) throw new Error(`tree: ${treeR.status} ${await treeR.text()}`);
+  const tree = await treeR.json();
+
+  const newCommitR = await fetch(`${api}/git/commits`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ message, tree: tree.sha, parents: [headSha] })
+  });
+  if (!newCommitR.ok) throw new Error(`commit: ${newCommitR.status} ${await newCommitR.text()}`);
+  const newCommit = await newCommitR.json();
+
+  const updR = await fetch(`${api}/git/refs/heads/${CONFIG.branch}`, {
+    method: 'PATCH', headers,
+    body: JSON.stringify({ sha: newCommit.sha })
+  });
+  if (!updR.ok) throw new Error(`ref update: ${updR.status} ${await updR.text()}`);
+  return newCommit.sha;
+}
+
+// ================= ADD PRESENTATION =================
+document.getElementById('upload-btn').onclick = async () => {
+  document.getElementById('log').textContent = '';
+  const btn = document.getElementById('upload-btn'); btn.disabled = true;
+  try {
+    const master = document.getElementById('master-pw').value;
+    const title = document.getElementById('f-title').value.trim();
+    const desc = document.getElementById('f-desc').value.trim();
+    const viewPw = document.getElementById('f-password').value;
+    const vcount = Math.max(1, parseInt(document.getElementById('f-vouchers').value) || 1);
+
+    if (!master) throw new Error('Master password required');
+    if (!title) throw new Error('Title required');
+    if (!adminFiles.pptx) throw new Error('.pptx is required for vouchers');
+
+    const id = rand(5);
+    const dir = `presentations/${id}`;
+    const entries = [];
+
+    logLine(`[*] Reading ${adminFiles.pptx.name}…`);
+    const pptxBytes = new Uint8Array(await adminFiles.pptx.arrayBuffer());
+    if (pptxBytes.length > 90 * 1024 * 1024)
+      throw new Error('File too big for GitHub (>90 MB)');
+
+    const presSalt = crypto.getRandomValues(new Uint8Array(16));
+    const kek = await Crypto.deriveRaw(master, presSalt);
+    const srcIv = crypto.getRandomValues(new Uint8Array(12));
+    logLine('[*] Encrypting source.pptx…');
+    entries.push({ path: `${dir}/source.pptx.enc`,
+      data: await Crypto.encRaw(pptxBytes, kek, srcIv) });
+
+    let pdfMeta = null, pptxMeta = null;
+    if (adminFiles.pdf) {
+      logLine(`[*] Reading ${adminFiles.pdf.name}…`);
+      const pdfBytes = new Uint8Array(await adminFiles.pdf.arrayBuffer());
+      if (viewPw) {
+        const s = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        entries.push({ path: `${dir}/slides.pdf.enc`,
+          data: await Crypto.encPw(pdfBytes, viewPw, s, iv) });
+        pdfMeta = { file: `${dir}/slides.pdf.enc`, encrypted: true,
+          salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
+      } else {
+        entries.push({ path: `${dir}/slides.pdf`, data: pdfBytes });
+        pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
+      }
+    } else {
+      logLine('[*] Encrypting slides.pptx…');
+      if (viewPw) {
+        const s = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        entries.push({ path: `${dir}/slides.pptx.enc`,
+          data: await Crypto.encPw(pptxBytes, viewPw, s, iv) });
+        pptxMeta = { file: `${dir}/slides.pptx.enc`, encrypted: true,
+          salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
+      } else {
+        entries.push({ path: `${dir}/slides.pptx`, data: pptxBytes });
+        pptxMeta = { file: `${dir}/slides.pptx`, encrypted: false };
+      }
+    }
+
+    logLine(`[*] Generating ${vcount} voucher(s)…`);
+    const newVouchers = [], codes = [];
+    for (let i = 0; i < vcount; i++) {
+      const code = rand(16).toUpperCase();
+      const vs = crypto.getRandomValues(new Uint8Array(16));
+      const vi = crypto.getRandomValues(new Uint8Array(12));
+      const vKey = await Crypto.deriveRaw(code, vs);
+      newVouchers.push({
+        id: rand(5), presentation_id: id,
+        salt: Crypto.bufToB64(vs), iv: Crypto.bufToB64(vi),
+        encrypted_key: Crypto.bufToB64(await Crypto.encRaw(kek, vKey, vi)),
+        created: new Date().toISOString().slice(0, 19), note: '',
+      });
+      codes.push(code);
+    }
+
+    logLine('[*] Updating data.json…');
+    const fresh = await (async () => {
+      const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return { presentations: [], vouchers: [] };
+      return await r.json();
+    })();
+    fresh.presentations = fresh.presentations || [];
+    fresh.vouchers = fresh.vouchers || [];
+    fresh.presentations.push({
+      id, title, description: desc,
+      created: new Date().toISOString().slice(0, 10),
+      locked: !!viewPw,
+      pdf: pdfMeta, pptxView: pptxMeta,
+      source: {
+        file: `${dir}/source.pptx.enc`,
+        salt: Crypto.bufToB64(presSalt), iv: Crypto.bufToB64(srcIv),
+      },
+    });
+    fresh.vouchers.push(...newVouchers);
+    entries.push({ path: 'data.json', text: JSON.stringify(fresh, null, 2) });
+
+    logLine('[*] Committing to GitHub…');
+    await commitFiles(entries, `add presentation: ${title}`);
+
+    logLine(`[✓] Done. ID: ${id}`);
+    logLine('');
+    logLine('Vouchers (save now — never shown again):');
+    codes.forEach(c => logLine('  ' + c));
+    logLine('');
+    logLine(`Live in ~30s: https://${CONFIG.owner}.github.io/${CONFIG.repo}/#v/${id}`);
+
+    adminFiles = { pptx: null, pdf: null };
+    document.getElementById('file-list').innerHTML = '';
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-password').value = '';
+    await loadData();
+  } catch (e) {
+    logLine('[!] ' + e.message);
+    console.error(e);
+  } finally { btn.disabled = false; }
+};
+
+// ================= ISSUE VOUCHER =================
+document.getElementById('voucher-issue').onclick = async () => {
+  const presId = document.getElementById('voucher-pres').value;
+  const note = document.getElementById('voucher-note').value.trim();
+  const master = document.getElementById('master-pw').value;
+  const out = document.getElementById('voucher-out');
+  out.classList.add('hidden'); out.textContent = '';
+
+  if (!presId) { out.textContent = 'No presentation selected'; out.classList.remove('hidden'); return; }
+  if (!master) { out.textContent = 'Master password required'; out.classList.remove('hidden'); return; }
+
+  const pres = DB.presentations.find(p => p.id === presId);
+  if (!pres) { out.textContent = 'Presentation not found'; out.classList.remove('hidden'); return; }
+
+  try {
+    const kek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
+    const code = rand(16).toUpperCase();
+    const vs = crypto.getRandomValues(new Uint8Array(16));
+    const vi = crypto.getRandomValues(new Uint8Array(12));
+    const vKey = await Crypto.deriveRaw(code, vs);
+
+    const fresh = await (async () => {
+      const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return { presentations: [], vouchers: [] };
+      return await r.json();
+    })();
+    fresh.vouchers = fresh.vouchers || [];
+    fresh.vouchers.push({
+      id: rand(5), presentation_id: presId,
+      salt: Crypto.bufToB64(vs), iv: Crypto.bufToB64(vi),
+      encrypted_key: Crypto.bufToB64(await Crypto.encRaw(kek, vKey, vi)),
+      created: new Date().toISOString().slice(0, 19), note,
+    });
+
+    await commitFiles([{ path: 'data.json', text: JSON.stringify(fresh, null, 2) }],
+      `voucher for ${pres.title}${note ? ' (' + note + ')' : ''}`);
+
+    out.textContent = `Voucher for "${pres.title}":\n${code}\n\nNote: ${note || '(none)'}\nCommitted — available immediately.`;
+    out.classList.remove('hidden');
+    await loadData();
+  } catch (e) { out.textContent = 'Error: ' + e.message; out.classList.remove('hidden'); }
 };
 </script>
 </body>
