@@ -115,8 +115,9 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 
 /* Viewer */
 .viewer-page { user-select: none; -webkit-user-select: none; }
-.render-area { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; }
-.pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; }
+.render-area { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; transition: filter 0.2s; }
+.pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; -webkit-user-drag: none; }
+.blurred-content { filter: blur(25px) !important; pointer-events: none; }
 
 /* Watermark */
 .watermark-layer {
@@ -141,6 +142,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
   border: 1px solid var(--line); border-radius: 8px; padding: 12px;
   margin-top: 12px; word-break: break-all; color: var(--accent); }
 
+/* Защита от печати */
 @media print {
   body * { display: none !important; }
   body::before { content: "Printing is disabled"; display: block !important; color: #000; padding: 40px; font-size: 24px; }
@@ -288,9 +290,7 @@ const CONFIG = {
   branch: "main",
   siteTitle: "Presentations",
 };
-// RAW используется для мгновенного получения данных (обновляется в течение секунд)
 const RAW = `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/`;
-// jsDelivr теперь используется только как запасной вариант, так как сильно кэширует
 const DATA_URL = `https://cdn.jsdelivr.net/gh/${CONFIG.owner}/${CONFIG.repo}@${CONFIG.branch}/data.json`;
 
 document.title = CONFIG.siteTitle;
@@ -352,7 +352,6 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 let DB = { presentations: [], vouchers: [] };
 let CURRENT = null;
 
-// Публичное чтение. useApi=true — свежее чтение для админки (через GitHub API).
 async function loadData(useApi = false) {
   if (useApi) {
     try {
@@ -362,9 +361,6 @@ async function loadData(useApi = false) {
       console.warn('Fresh admin load failed, falling back to raw:', e);
     }
   }
-  
-  // 1. Пытаемся получить свежие данные через raw.githubusercontent.com
-  // (в отличие от jsDelivr, raw обновляется почти мгновенно после коммита)
   try {
     const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
     if (r.ok) {
@@ -375,8 +371,6 @@ async function loadData(useApi = false) {
   } catch (e) {
     console.warn('RAW data fetch failed, trying jsDelivr fallback...', e);
   }
-
-  // 2. Запасной вариант — jsDelivr (может отдавать старые данные, если у RAW сбой)
   try {
     const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (r.ok) {
@@ -391,16 +385,12 @@ async function loadData(useApi = false) {
   }
 }
 
-// Свежие данные напрямую из GitHub (с токеном) — без CDN-кэша.
 async function fetchFreshData() {
   const token = localStorage.getItem('gh_token');
   if (!token) throw new Error('Not authenticated');
   const api = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/data.json?ref=${CONFIG.branch}`;
   const r = await fetch(api, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github.raw+json'
-    },
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw+json' },
     cache: 'no-store'
   });
   if (r.status === 404) return { presentations: [], vouchers: [] };
@@ -555,7 +545,6 @@ function loadScript(src) {
 
 async function renderSlides(password) {
   const meta = CURRENT.pdf;
-
   if (!meta) {
     const area = document.getElementById('render-area');
     area.innerHTML = `<div style="text-align:center; margin-top:40px; padding:0 20px;">
@@ -623,11 +612,14 @@ async function renderPdf(bytes) {
   }
 }
 
-// ================= PROTECTION (только в режиме просмотра) =================
+// ================= EXTREME PROTECTION =================
+
 function viewerActive() {
   const v = document.getElementById('viewer-view');
   return v && !v.classList.contains('hidden');
 }
+
+// 1. Блокировка контекстного меню, копирования, выделения
 ['contextmenu','copy','cut','dragstart','selectstart'].forEach(ev =>
   document.addEventListener(ev, e => {
     if (!viewerActive()) return;
@@ -635,21 +627,72 @@ function viewerActive() {
     e.preventDefault();
   })
 );
+
+// 2. Блокировка вставки
 document.addEventListener('paste', e => {
   if (!viewerActive()) return;
   if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
   e.preventDefault();
 });
+
+// 3. Блокировка горячих клавиш (Ctrl+S, P, C, A, U, F12, DevTools)
 document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
+  
+  // Блокировка DevTools и View Source
+  if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) ||
+      (e.ctrlKey && k === 'u')
+  ) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+  }
+
+  // Блокировка сохранения / печати / копирования
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
   }
 });
-window.addEventListener('beforeprint', () => document.getElementById('render-area').style.display = 'none');
-window.addEventListener('afterprint', () => document.getElementById('render-area').style.display = '');
+
+// 4. Защита от скриншотов через потерю фокуса
+window.addEventListener('blur', () => {
+  if (viewerActive()) {
+    document.getElementById('render-area').classList.add('blurred-content');
+  }
+});
+window.addEventListener('focus', () => {
+  document.getElementById('render-area').classList.remove('blurred-content');
+});
+// Также размываем, если мышка уходит за пределы окна
+document.addEventListener('mouseleave', () => {
+  if (viewerActive()) {
+    document.getElementById('render-area').classList.add('blurred-content');
+  }
+});
+document.addEventListener('mouseenter', () => {
+  document.getElementById('render-area').classList.remove('blurred-content');
+});
+
+// 5. Уничтожение контента при печати
+window.addEventListener('beforeprint', () => {
+  if (viewerActive()) {
+    const area = document.getElementById('render-area');
+    area.dataset.savedHtml = area.innerHTML;
+    area.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Printing is disabled</div>';
+  }
+});
+window.addEventListener('afterprint', () => {
+  const area = document.getElementById('render-area');
+  if (area.dataset.savedHtml) {
+    area.innerHTML = area.dataset.savedHtml;
+    delete area.dataset.savedHtml;
+  }
+});
+
 
 // ================= PASSWORD =================
 document.getElementById('pw-submit').onclick = async () => {
