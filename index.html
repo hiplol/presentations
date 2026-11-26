@@ -105,6 +105,12 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 .log .success { color: var(--accent); }
 .log .fail { color: #ff6b6b; }
 
+/* Manage List */
+.manage-list { margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.manage-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.manage-item:last-child { border-bottom: none; }
+.manage-item span { font-size: 14px; }
+
 hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 
 /* Viewer */
@@ -146,6 +152,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
   <button id="back-btn" class="back hidden">← Back</button>
   <h1 id="page-title">Presentations</h1>
   <button id="admin-btn" class="btn ghost">Admin</button>
+  <button id="voucher-btn" class="btn ghost hidden" style="margin-right: 8px;">Redeem voucher</button>
   <button id="request-btn" class="btn ghost hidden">Request copy</button>
 </header>
 
@@ -216,6 +223,11 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
       </div>
 
       <div id="log" class="log hidden"></div>
+
+      <hr>
+
+      <h2>Manage existing presentations</h2>
+      <div id="manage-list" class="manage-list"></div>
 
       <hr>
 
@@ -361,6 +373,7 @@ async function showGrid() {
   document.getElementById('admin-view').classList.add('hidden');
   document.getElementById('watermark-layer').classList.add('hidden');
   document.getElementById('back-btn').classList.add('hidden');
+  document.getElementById('voucher-btn').classList.add('hidden');
   document.getElementById('request-btn').classList.add('hidden');
   document.getElementById('page-title').textContent = CONFIG.siteTitle;
   document.title = CONFIG.siteTitle;
@@ -399,7 +412,11 @@ async function showViewer(pid) {
   document.getElementById('admin-view').classList.add('hidden');
   document.getElementById('back-btn').classList.remove('hidden');
   document.getElementById('back-btn').onclick = () => location.hash = '';
+  
+  document.getElementById('voucher-btn').classList.remove('hidden');
+  document.getElementById('voucher-btn').onclick = () => document.getElementById('modal-voucher').classList.remove('hidden');
   document.getElementById('request-btn').classList.remove('hidden');
+  
   document.getElementById('render-area').innerHTML = '';
   document.getElementById('lock-screen').classList.add('hidden');
   document.getElementById('pw-error').textContent = '';
@@ -449,10 +466,15 @@ function loadScript(src) {
 }
 
 async function renderSlides(password) {
-  const meta = CURRENT.pdf; // Всегда используем PDF для просмотра
+  const meta = CURRENT.pdf;
   
   if (!meta) {
-      throw new Error('No PDF file found for viewing. Please re-upload the presentation.');
+      const area = document.getElementById('render-area');
+      area.innerHTML = `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">
+        ❌ This presentation was uploaded before PDF support was added.<br><br>
+        <span style="font-size:14px; color:#ccc">Please go to Admin and delete it, then upload it again.</span>
+      </p>`;
+      return;
   }
 
   const r = await fetch(RAW + meta.file + '?t=' + Date.now(), { cache: 'no-store' });
@@ -491,7 +513,7 @@ async function renderPdf(bytes) {
     const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
     const scale = Math.min(2, window.devicePixelRatio || 1);
     const area = document.getElementById('render-area');
-    area.innerHTML = ''; // Clear loading text
+    area.innerHTML = ''; 
     
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
@@ -611,6 +633,7 @@ async function showAdmin() {
   document.getElementById('watermark-layer').classList.add('hidden');
   document.getElementById('back-btn').classList.remove('hidden');
   document.getElementById('back-btn').onclick = () => location.hash = '';
+  document.getElementById('voucher-btn').classList.add('hidden');
   document.getElementById('request-btn').classList.add('hidden');
   document.getElementById('page-title').textContent = 'Admin';
   document.title = 'Admin';
@@ -620,13 +643,46 @@ async function showAdmin() {
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-panel').classList.remove('hidden');
     await loadData();
+    
+    // Fill Dropdown
     const sel = document.getElementById('voucher-pres');
     sel.innerHTML = DB.presentations.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('') || '<option value="">(no presentations)</option>';
+    
+    // Fill Manage List
+    const list = document.getElementById('manage-list');
+    if (!DB.presentations.length) {
+        list.innerHTML = '<div class="manage-item muted">No presentations</div>';
+    } else {
+        list.innerHTML = DB.presentations.map(p => `
+          <div class="manage-item">
+            <span>${esc(p.title)} ${p.pdf ? '' : '<span style="color:#ff6b6b;font-size:12px;">(No PDF)</span>'}</span>
+            <button class="btn danger" style="padding:4px 8px;font-size:12px;" onclick="deletePres('${p.id}')">Delete</button>
+          </div>
+        `).join('');
+    }
   } else {
     document.getElementById('admin-login').classList.remove('hidden');
     document.getElementById('admin-panel').classList.add('hidden');
   }
 }
+
+window.deletePres = async (id) => {
+  if (!confirm('Delete this presentation? It will disappear from the site.')) return;
+  try {
+    const fresh = await (async () => {
+      const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
+      return await r.json();
+    })();
+    fresh.presentations = fresh.presentations.filter(p => p.id !== id);
+    fresh.vouchers = fresh.vouchers.filter(v => v.presentation_id !== id);
+    
+    await commitFiles([{ path: 'data.json', text: JSON.stringify(fresh, null, 2) }], `delete presentation: ${id}`);
+    alert('Deleted successfully. Files might remain in the repo but won\'t show on the site.');
+    await showAdmin();
+  } catch(e) {
+    alert('Error deleting: ' + e.message);
+  }
+};
 
 document.getElementById('pat-save').onclick = async () => {
   const tok = document.getElementById('pat-input').value.trim();
@@ -749,7 +805,6 @@ async function commitFiles(files, message) {
 async function convertPptxToPdf(file) {
     logLine('[*] Loading conversion library (this may take a few seconds)...');
     if (!window.Ream) {
-        // Ream is available as a UMD module on unpkg/jsdelivr
         await loadScript('https://cdn.jsdelivr.net/npm/reamkit/dist/ream.umd.js');
     }
     
@@ -758,14 +813,13 @@ async function convertPptxToPdf(file) {
     const bytes = new Uint8Array(arrayBuffer);
     
     try {
-        // Ream's API: parse the file, then convert to PDF
         const doc = Ream.parse(bytes);
         const pdfBytes = await doc.convert('pdf');
         logLine('[✓] Conversion successful.', 'success');
         return new Uint8Array(pdfBytes);
     } catch (error) {
         logLine('[!] Conversion failed: ' + error.message, 'fail');
-        throw new Error('Auto-conversion to PDF failed. Please try again or upload a PDF manually.');
+        throw new Error('Auto-conversion to PDF failed. The presentation might be too complex.');
     }
 }
 
@@ -792,26 +846,21 @@ document.getElementById('upload-btn').onclick = async () => {
     const dir = `presentations/${id}`;
     const entries = [];
 
-    // 1. Read PPTX bytes
     logLine(`[*] Reading ${adminFile.name}…`);
     const pptxBytes = new Uint8Array(await adminFile.arrayBuffer());
     if (pptxBytes.length > 85 * 1024 * 1024) {
       logLine(`[!] Warning: file is very large. GitHub might reject files > 100MB.`, 'fail');
     }
 
-    // 2. Convert to PDF (for viewing)
     const pdfBytes = await convertPptxToPdf(adminFile);
 
-    // 3. Encrypt and prepare files
     const presSalt = crypto.getRandomValues(new Uint8Array(16));
     const kek = await Crypto.deriveRaw(master, presSalt);
     
-    // Encrypt source PPTX
     logLine('[*] Encrypting source.pptx…');
     const srcIv = crypto.getRandomValues(new Uint8Array(12));
     entries.push({ path: `${dir}/source.pptx.enc`, data: await Crypto.encRaw(pptxBytes, kek, srcIv) });
 
-    // Encrypt viewable PDF
     let pdfMeta = null;
     logLine('[*] Encrypting slides.pdf for viewing…');
     if (viewPw) {
@@ -824,7 +873,6 @@ document.getElementById('upload-btn').onclick = async () => {
       pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
     }
 
-    // 4. Generate vouchers
     logLine(`[*] Generating ${vcount} voucher(s)…`);
     const newVouchers = [], codes = [];
     for (let i = 0; i < vcount; i++) {
@@ -841,7 +889,6 @@ document.getElementById('upload-btn').onclick = async () => {
       codes.push(code);
     }
 
-    // 5. Update data.json
     logLine('[*] Updating data.json…');
     const fresh = await (async () => {
       const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
@@ -864,7 +911,6 @@ document.getElementById('upload-btn').onclick = async () => {
     fresh.vouchers.push(...newVouchers);
     entries.push({ path: 'data.json', text: JSON.stringify(fresh, null, 2) });
 
-    // 6. Commit to GitHub
     logLine('[*] Committing to GitHub (this may take a moment)…');
     await commitFiles(entries, `add presentation: ${title}`);
 
@@ -880,7 +926,7 @@ document.getElementById('upload-btn').onclick = async () => {
     document.getElementById('f-title').value = '';
     document.getElementById('f-desc').value = '';
     document.getElementById('f-password').value = '';
-    await loadData();
+    await showAdmin(); // Reload admin panel to show new items
   } catch (e) {
     logLine('[!] Error: ' + e.message, 'fail');
     console.error(e);
