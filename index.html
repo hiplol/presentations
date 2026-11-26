@@ -385,6 +385,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 // ================= DATA =================
 let DB = { presentations: [], vouchers: [] };
 let CURRENT = null;
+let watermarkReady = false; // Объявлено тут, чтобы не было ошибки инициализации
 
 async function loadData(useApi = false) {
   if (useApi) {
@@ -682,8 +683,6 @@ async function renderPdf(bytes) {
 }
 
 // ================= EXTREME PROTECTION =================
-
-let watermarkReady = false;
 
 function viewerActive() {
   const v = document.getElementById('viewer-view');
