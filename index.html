@@ -290,7 +290,7 @@ const CONFIG = {
 };
 // RAW используется для больших файлов (pdf, картинки), так как jsDelivr имеет лимит 20MB
 const RAW = `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/`;
-// DATA_URL используется для data.json, так как jsDelivr обновляет кэш мгновенно
+// DATA_URL используется для data.json (публичное чтение)
 const DATA_URL = `https://cdn.jsdelivr.net/gh/${CONFIG.owner}/${CONFIG.repo}@${CONFIG.branch}/data.json`;
 
 document.title = CONFIG.siteTitle;
@@ -352,7 +352,16 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 let DB = { presentations: [], vouchers: [] };
 let CURRENT = null;
 
-async function loadData() {
+// Публичное чтение (через CDN). useApi=true — свежее чтение для админки (через GitHub API).
+async function loadData(useApi = false) {
+  if (useApi) {
+    try {
+      DB = await fetchFreshData();
+      return;
+    } catch (e) {
+      console.warn('Fresh admin load failed, falling back to CDN:', e);
+    }
+  }
   try {
     const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (r.ok) {
@@ -367,7 +376,32 @@ async function loadData() {
   }
 }
 
+// Свежие данные напрямую из GitHub (с токеном) — без CDN-кэша.
+// Это критично, иначе коммит может затереть недавние изменения.
+async function fetchFreshData() {
+  const token = localStorage.getItem('gh_token');
+  if (!token) throw new Error('Not authenticated');
+  const api = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/data.json?ref=${CONFIG.branch}`;
+  const r = await fetch(api, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github.raw+json'
+    },
+    cache: 'no-store'
+  });
+  if (r.status === 404) return { presentations: [], vouchers: [] };
+  if (!r.ok) throw new Error('Failed to read data.json: ' + r.status);
+  const text = await r.text();
+  if (!text.trim()) return { presentations: [], vouchers: [] };
+  return JSON.parse(text);
+}
+
 // ================= ROUTER =================
+function hideModals() {
+  document.getElementById('modal').classList.add('hidden');
+  document.getElementById('modal-voucher').classList.add('hidden');
+}
+
 window.addEventListener('hashchange', route);
 route();
 
@@ -380,6 +414,7 @@ async function route() {
 
 // ================= GRID =================
 async function showGrid() {
+  hideModals();
   document.getElementById('grid-view').classList.remove('hidden');
   document.getElementById('viewer-view').classList.add('hidden');
   document.getElementById('admin-view').classList.add('hidden');
@@ -419,6 +454,7 @@ async function showGrid() {
 
 // ================= VIEWER =================
 async function showViewer(pid) {
+  hideModals();
   document.getElementById('grid-view').classList.add('hidden');
   document.getElementById('viewer-view').classList.remove('hidden');
   document.getElementById('admin-view').classList.add('hidden');
@@ -426,16 +462,33 @@ async function showViewer(pid) {
   document.getElementById('back-btn').onclick = () => location.hash = '';
 
   document.getElementById('voucher-btn').classList.remove('hidden');
-  document.getElementById('voucher-btn').onclick = () => document.getElementById('modal-voucher').classList.remove('hidden');
+  document.getElementById('voucher-btn').onclick = () => {
+    document.getElementById('voucher-input').value = '';
+    document.getElementById('voucher-status').textContent = '';
+    document.getElementById('modal-voucher').classList.remove('hidden');
+  };
   document.getElementById('request-btn').classList.remove('hidden');
+  document.getElementById('request-btn').onclick = () => {
+    document.getElementById('req-contact').value = '';
+    document.getElementById('req-reason').value = '';
+    document.getElementById('req-status').textContent = '';
+    document.getElementById('modal').classList.remove('hidden');
+  };
 
   document.getElementById('render-area').innerHTML = '';
   document.getElementById('lock-screen').classList.add('hidden');
   document.getElementById('pw-error').textContent = '';
+  document.getElementById('pw-input').value = '';
 
   await loadData();
   CURRENT = DB.presentations.find(p => p.id === pid);
-  if (!CURRENT) { document.getElementById('page-title').textContent = 'Not found'; return; }
+  if (!CURRENT) {
+    document.getElementById('page-title').textContent = 'Not found';
+    document.title = 'Not found';
+    document.getElementById('render-area').innerHTML =
+      '<p class="error" style="text-align:center; margin-top:40px;">Presentation not found.</p>';
+    return;
+  }
 
   document.getElementById('page-title').textContent = CURRENT.title;
   document.title = CURRENT.title;
@@ -446,8 +499,13 @@ async function showViewer(pid) {
   if (CURRENT.locked) {
     document.getElementById('lock-screen').classList.remove('hidden');
   } else {
-    try { await renderSlides(null); }
-    catch (e) { console.error(e); }
+    try {
+      await renderSlides(null);
+    } catch (e) {
+      console.error(e);
+      document.getElementById('render-area').innerHTML =
+        `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">❌ ${esc(e.message)}</p>`;
+    }
   }
 }
 
@@ -457,14 +515,18 @@ async function buildWatermark() {
     const r = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
     ip = (await r.json()).ip;
   } catch (e) {}
-  const fp = await Crypto.sha256Hex(
-    navigator.userAgent + '|' + screen.width + 'x' + screen.height +
-    '|' + Intl.DateTimeFormat().resolvedOptions().timeZone);
+  let fp = '00000000';
+  try {
+    fp = await Crypto.sha256Hex(
+      navigator.userAgent + '|' + screen.width + 'x' + screen.height +
+      '|' + Intl.DateTimeFormat().resolvedOptions().timeZone);
+  } catch (e) {}
   const text = `${ip} · ${fp.slice(0, 8)} · ${new Date().toLocaleString('en-US')}`;
+  const safe = esc(text);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="260">
     <text x="50%" y="50%" font-family="sans-serif" font-size="18"
       fill="rgba(120,120,120,0.16)" text-anchor="middle"
-      transform="rotate(-30 260 130)">${text}</text></svg>`;
+      transform="rotate(-30 260 130)">${safe}</text></svg>`;
   document.getElementById('watermark-layer').style.backgroundImage =
     `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
 }
@@ -547,18 +609,25 @@ async function renderPdf(bytes) {
   }
 }
 
-// ================= PROTECTION =================
+// ================= PROTECTION (только в режиме просмотра) =================
+function viewerActive() {
+  const v = document.getElementById('viewer-view');
+  return v && !v.classList.contains('hidden');
+}
 ['contextmenu','copy','cut','dragstart','selectstart'].forEach(ev =>
   document.addEventListener(ev, e => {
+    if (!viewerActive()) return;
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
     e.preventDefault();
   })
 );
 document.addEventListener('paste', e => {
+  if (!viewerActive()) return;
   if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
   e.preventDefault();
 });
 document.addEventListener('keydown', e => {
+  if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
@@ -575,7 +644,8 @@ document.getElementById('pw-submit').onclick = async () => {
   try {
     await renderSlides(document.getElementById('pw-input').value);
   } catch (e) {
-    document.getElementById('pw-error').textContent = e.message === 'Incorrect password or corrupted file' ? 'Incorrect password' : 'Error: ' + e.message;
+    document.getElementById('pw-error').textContent =
+      e.message === 'Incorrect password or corrupted file' ? 'Incorrect password' : 'Error: ' + e.message;
   } finally {
     btn.disabled = false; btn.textContent = 'Open';
   }
@@ -584,7 +654,6 @@ document.getElementById('pw-input').onkeydown = e => { if (e.key === 'Enter') do
 
 // ================= COPY REQUEST =================
 const modal = document.getElementById('modal');
-document.getElementById('request-btn').onclick = () => modal.classList.remove('hidden');
 document.getElementById('req-cancel').onclick = () => modal.classList.add('hidden');
 document.getElementById('req-send').onclick = async () => {
   const contact = document.getElementById('req-contact').value.trim();
@@ -604,6 +673,9 @@ document.getElementById('req-send').onclick = async () => {
 // ================= VOUCHER REDEEM =================
 const vModal = document.getElementById('modal-voucher');
 document.getElementById('voucher-cancel').onclick = () => vModal.classList.add('hidden');
+document.getElementById('voucher-input').onkeydown = e => {
+  if (e.key === 'Enter') document.getElementById('voucher-go').click();
+};
 document.getElementById('voucher-go').onclick = async () => {
   const code = document.getElementById('voucher-input').value.trim();
   const status = document.getElementById('voucher-status');
@@ -649,6 +721,7 @@ document.getElementById('voucher-go').onclick = async () => {
 
 // ================= ADMIN =================
 async function showAdmin() {
+  hideModals();
   document.getElementById('grid-view').classList.add('hidden');
   document.getElementById('viewer-view').classList.add('hidden');
   document.getElementById('admin-view').classList.remove('hidden');
@@ -664,12 +737,11 @@ async function showAdmin() {
   if (token) {
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-panel').classList.remove('hidden');
-    await loadData();
+    await loadData(true);
 
     const sel = document.getElementById('voucher-pres');
     sel.innerHTML = DB.presentations.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('') || '<option value="">(no presentations)</option>';
 
-    // Manage List — с раскрывающимся списком ваучеров
     const list = document.getElementById('manage-list');
     if (!DB.presentations.length) {
       list.innerHTML = '<div class="manage-item muted">No presentations</div>';
@@ -854,7 +926,6 @@ async function commitFiles(files, message) {
 
   const treeEntries = [];
   for (const f of files) {
-    // удаление файла: sha=null
     if (f.delete) {
       treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
       continue;
@@ -891,13 +962,6 @@ async function commitFiles(files, message) {
   });
   if (!updR.ok) throw new Error(`Failed to update ref: ${updR.status}`);
   return newCommit.sha;
-}
-
-// Свежие данные прямо из репозитория (через jsDelivr, чтобы избежать кэша GitHub)
-async function fetchFreshData() {
-  const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
-  if (!r.ok) return { presentations: [], vouchers: [] };
-  return await r.json();
 }
 
 // Полное дерево репозитория — нужно, чтобы удалить файлы презентации
@@ -942,7 +1006,6 @@ document.getElementById('upload-btn').onclick = async () => {
     const dir = `presentations/${id}`;
     const entries = [];
 
-    // Источник: pptx (предпочтительно), иначе pdf
     const sourceFile = adminPptx || adminPdf;
     const sourceExt = adminPptx ? 'pptx' : 'pdf';
     logLine(`[*] Reading ${sourceFile.name}…`);
@@ -953,14 +1016,12 @@ document.getElementById('upload-btn').onclick = async () => {
 
     const presSalt = crypto.getRandomValues(new Uint8Array(16));
     const kek = await Crypto.deriveRaw(master, presSalt);
-    // Верификатор мастер-пароля (проверяется при выдаче ваучера)
     const kekCheck = await Crypto.sha256Hex(hex(kek));
 
     logLine('[*] Encrypting source file…');
     const srcIv = crypto.getRandomValues(new Uint8Array(12));
     entries.push({ path: `${dir}/source.${sourceExt}.enc`, data: await Crypto.encRaw(sourceBytes, kek, srcIv) });
 
-    // Превью — из PDF (если загружен)
     let pdfMeta = null;
     let previewBytes = null;
     if (adminPdf) {
@@ -1056,14 +1117,18 @@ document.getElementById('voucher-issue').onclick = async () => {
   if (!presId) { out.textContent = 'No presentation selected'; out.classList.remove('hidden'); return; }
   if (!master) { out.textContent = 'Master password required'; out.classList.remove('hidden'); return; }
 
-  const pres = DB.presentations.find(p => p.id === presId);
-  if (!pres) { out.textContent = 'Presentation not found'; out.classList.remove('hidden'); return; }
-  if (!pres.source || !pres.source.salt) { out.textContent = 'Source not available for this presentation'; out.classList.remove('hidden'); return; }
-
   btn.disabled = true;
   try {
+    // Свежие данные, чтобы не работать с устаревшим кэшем
+    const fresh = await fetchFreshData();
+    fresh.presentations = fresh.presentations || [];
+    fresh.vouchers = fresh.vouchers || [];
+
+    const pres = fresh.presentations.find(p => p.id === presId);
+    if (!pres) throw new Error('Presentation not found');
+    if (!pres.source || !pres.source.salt) throw new Error('Source not available for this presentation');
+
     const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
-    // Проверка мастер-пароля
     if (pres.kek_check) {
       const check = await Crypto.sha256Hex(hex(derivedKek));
       if (check !== pres.kek_check) {
@@ -1077,8 +1142,6 @@ document.getElementById('voucher-issue').onclick = async () => {
     const vi = crypto.getRandomValues(new Uint8Array(12));
     const vKey = await Crypto.deriveRaw(code, vs);
 
-    const fresh = await fetchFreshData();
-    fresh.vouchers = fresh.vouchers || [];
     fresh.vouchers.push({
       id: rand(5), presentation_id: presId,
       salt: Crypto.bufToB64(vs), iv: Crypto.bufToB64(vi),
@@ -1092,7 +1155,7 @@ document.getElementById('voucher-issue').onclick = async () => {
     out.textContent = `Voucher for "${pres.title}":\n${code}\n\nNote: ${note || '(none)'}\nCommitted — available immediately.`;
     out.classList.remove('hidden');
     document.getElementById('voucher-note').value = '';
-    await loadData();
+    await showAdmin();
   } catch (e) {
     out.textContent = 'Error: ' + e.message;
     out.classList.remove('hidden');
