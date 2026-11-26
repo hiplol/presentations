@@ -462,23 +462,31 @@ async function renderSlides(password) {
   const meta = usePdf ? CURRENT.pdf : CURRENT.pptxView;
   
   const r = await fetch(RAW + meta.file + '?t=' + Date.now(), { cache: 'no-store' });
-  if (!r.ok) throw new Error('Failed to fetch presentation file');
+  if (!r.ok) throw new Error('Failed to download presentation file from GitHub. Check if the file exists.');
   
   let buf = await r.arrayBuffer();
   if (meta.encrypted) {
     try { 
       buf = await Crypto.decPw(buf, password, Crypto.b64ToBuf(meta.salt), Crypto.b64ToBuf(meta.iv)); 
     } catch (e) { 
-      throw new Error('Incorrect password'); 
+      throw new Error('Incorrect password or corrupted file'); 
     }
   }
   
   document.getElementById('lock-screen').classList.add('hidden');
   const area = document.getElementById('render-area');
-  area.innerHTML = '';
+  area.innerHTML = '<p class="muted" style="text-align:center; margin-top:20px;">Rendering slides, please wait...</p>';
   
-  if (usePdf) await renderPdf(buf);
-  else await renderPptx(buf);
+  try {
+    if (usePdf) await renderPdf(buf);
+    else await renderPptx(buf);
+  } catch (e) {
+    area.innerHTML = `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">
+      ❌ Failed to render slides.<br><br>
+      <span style="font-size:14px; color:#ccc">${esc(e.message)}</span><br><br>
+      <span style="font-size:13px; color:#8ca38a">Tip: If this is a .pptx file, export it to PDF using PowerPoint (File → Export → PDF) and upload both files next time. PDF renders much better in browsers.</span>
+    </p>`;
+  }
 }
 
 async function renderPdf(bytes) {
@@ -486,46 +494,75 @@ async function renderPdf(bytes) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
-  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
-  const scale = Math.min(2, window.devicePixelRatio || 1);
-  const area = document.getElementById('render-area');
   
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const vp = page.getViewport({ scale: 1.3 * scale });
-    const c = document.createElement('canvas');
-    c.className = 'pdf-page';
-    c.width = vp.width; c.height = vp.height;
-    c.style.width = (vp.width / scale) + 'px';
-    area.appendChild(c);
-    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+    const scale = Math.min(2, window.devicePixelRatio || 1);
+    const area = document.getElementById('render-area');
+    area.innerHTML = ''; // Clear loading text
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({ scale: 1.3 * scale });
+      const c = document.createElement('canvas');
+      c.className = 'pdf-page';
+      c.width = vp.width; c.height = vp.height;
+      c.style.width = (vp.width / scale) + 'px';
+      c.style.background = '#fff';
+      area.appendChild(c);
+      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    }
+  } catch(e) {
+    throw new Error('PDF.js rendering failed: ' + e.message);
   }
 }
 
 async function renderPptx(bytes) {
   if (!window.jQuery) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js');
+  if (!window.JSZip) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
   if (!window.pptxToHtml) {
     await loadCss('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/css/pptxjs.css');
     await loadScript('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/divs2slides.js');
     await loadScript('https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/pptxjs.js');
   }
-  const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
-  const url = URL.createObjectURL(blob);
-  const box = document.createElement('div');
-  box.className = 'ppt-render'; box.id = 'ppt-box';
-  document.getElementById('render-area').appendChild(box);
   
-  await new Promise(resolve => {
-    $('#ppt-box').pptxToHtml({
-      pptxFileUrl: url, slideMode: false, keyBoardShortCut: false,
-      slideModeConfig: { on: resolve }
+  try {
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+    const url = URL.createObjectURL(blob);
+    const area = document.getElementById('render-area');
+    area.innerHTML = '';
+    
+    const box = document.createElement('div');
+    box.className = 'ppt-render'; box.id = 'ppt-box';
+    box.style.minHeight = '400px';
+    area.appendChild(box);
+    
+    await new Promise((resolve, reject) => {
+      let isDone = false;
+      $('#ppt-box').pptxToHtml({
+        pptxFileUrl: url, 
+        slideMode: false, 
+        keyBoardShortCut: false,
+        slideModeConfig: { 
+          on: () => { if(!isDone) { isDone = true; resolve(); } }
+        }
+      });
+      // Fallback, если библиотека молчит
+      setTimeout(() => {
+        if(!isDone) { isDone = true; resolve(); }
+      }, 8000);
     });
-    setTimeout(resolve, 8000); // fallback
-  });
+    
+    // Проверяем, отрисовалось ли хоть что-то
+    if (document.getElementById('ppt-box').innerHTML.trim() === '') {
+       throw new Error('PPTX.js could not parse this file (empty output). Complex formatting is not supported.');
+    }
+  } catch (e) {
+    throw new Error('PPTX rendering failed: ' + e.message);
+  }
 }
 
 // ================= PROTECTION =================
-// Block context menu and hotkeys, BUT allow inputs
 ['contextmenu','copy','cut','dragstart','selectstart'].forEach(ev =>
   document.addEventListener(ev, e => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
@@ -537,7 +574,7 @@ document.addEventListener('paste', e => {
   e.preventDefault();
 });
 document.addEventListener('keydown', e => {
-  const k = e.key.toLowerCase();
+  const k = (e.key || '').toLowerCase(); // ИСПРАВЛЕНО: защита от undefined
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
@@ -553,7 +590,7 @@ document.getElementById('pw-submit').onclick = async () => {
   try { 
     await renderSlides(document.getElementById('pw-input').value); 
   } catch (e) { 
-    document.getElementById('pw-error').textContent = 'Incorrect password'; 
+    document.getElementById('pw-error').textContent = e.message === 'Incorrect password or corrupted file' ? 'Incorrect password' : 'Error: ' + e.message; 
   } finally {
     btn.disabled = false; btn.textContent = 'Open';
   }
