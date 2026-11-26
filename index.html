@@ -474,7 +474,6 @@ function loadScript(src) {
 async function renderSlides(password) {
   const meta = CURRENT.pdf;
 
-  // Fix #4: graceful "no preview" instead of crash
   if (!meta) {
     const area = document.getElementById('render-area');
     area.innerHTML = `<div style="text-align:center; margin-top:40px; padding:0 20px;">
@@ -605,7 +604,6 @@ document.getElementById('voucher-go').onclick = async () => {
   const btn = document.getElementById('voucher-go');
 
   if (!code) { status.textContent = 'Enter code'; return; }
-  // Fix #7: guard against missing source
   if (!CURRENT || !CURRENT.source || !CURRENT.source.file) {
     status.textContent = 'Source file not available for this presentation.';
     return;
@@ -622,7 +620,6 @@ document.getElementById('voucher-go').onclick = async () => {
         const sCt = await sRes.arrayBuffer();
         const plain = await Crypto.decRaw(sCt, new Uint8Array(kek), Crypto.b64ToBuf(CURRENT.source.iv));
 
-        // Fix #2: use original filename, not hardcoded .pptx
         const fname = CURRENT.source.original_name
           || (CURRENT.title + (CURRENT.source.file.endsWith('.pdf.enc') ? '.pdf' : '.pptx'));
         const blob = new Blob([plain], { type: 'application/octet-stream' });
@@ -666,16 +663,40 @@ async function showAdmin() {
     const sel = document.getElementById('voucher-pres');
     sel.innerHTML = DB.presentations.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('') || '<option value="">(no presentations)</option>';
 
+    // Manage List — с раскрывающимся списком ваучеров
     const list = document.getElementById('manage-list');
     if (!DB.presentations.length) {
       list.innerHTML = '<div class="manage-item muted">No presentations</div>';
     } else {
-      list.innerHTML = DB.presentations.map(p => `
-        <div class="manage-item">
-          <span>${esc(p.title)} ${p.pdf ? '' : '<span style="color:#ff6b6b;font-size:12px;">(no preview)</span>'}</span>
-          <button class="btn danger" style="padding:4px 8px;font-size:12px;" onclick="deletePres('${p.id}')">Delete</button>
-        </div>
-      `).join('');
+      list.innerHTML = DB.presentations.map(p => {
+        const pvs = (DB.vouchers || []).filter(v => v.presentation_id === p.id);
+        return `
+          <div class="manage-item" style="flex-direction:column; align-items:stretch; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+              <span>
+                ${esc(p.title)}
+                <span class="muted" style="font-size:12px;">· ${pvs.length} voucher${pvs.length===1?'':'s'}</span>
+                ${p.pdf ? '' : '<span style="color:#ff6b6b;font-size:12px;"> · no preview</span>'}
+                ${p.locked ? ' 🔒' : ''}
+              </span>
+              <div style="display:flex; gap:6px;">
+                <button class="btn ghost" style="padding:4px 8px;font-size:12px;" onclick="toggleVouchers('${p.id}')">Vouchers</button>
+                <button class="btn danger" style="padding:4px 8px;font-size:12px;" onclick="deletePres('${p.id}')">Delete</button>
+              </div>
+            </div>
+            <div id="vlist-${p.id}" class="hidden" style="font-size:12px;">
+              ${pvs.length ? pvs.map(v => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-top:1px solid var(--line); gap:8px;">
+                  <span class="muted" style="word-break:break-all;">
+                    <code>${esc(v.id)}</code> · ${esc(v.created || '')}${v.note ? ' · ' + esc(v.note) : ''}
+                  </span>
+                  <button class="btn danger" style="padding:2px 6px;font-size:11px;flex-shrink:0;" onclick="deleteVoucher('${v.id}')">Revoke</button>
+                </div>
+              `).join('') : '<div class="muted" style="padding:6px 0;">No vouchers</div>'}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
   } else {
     document.getElementById('admin-login').classList.remove('hidden');
@@ -684,21 +705,59 @@ async function showAdmin() {
 }
 
 window.deletePres = async (id) => {
-  if (!confirm('Delete this presentation? It will disappear from the site.')) return;
+  if (!confirm('Delete this presentation?\n\n• All files in presentations/' + id + '/ will be removed from the repo\n• All its vouchers will be revoked\n\nThis cannot be undone.')) return;
   try {
-    const fresh = await (async () => {
-      const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
-      return await r.json();
-    })();
-    fresh.presentations = fresh.presentations.filter(p => p.id !== id);
-    fresh.vouchers = fresh.vouchers.filter(v => v.presentation_id !== id);
+    const fresh = await fetchFreshData();
+    const pres = fresh.presentations.find(p => p.id === id);
+    if (!pres) throw new Error('Presentation not found in data.json');
 
-    await commitFiles([{ path: 'data.json', text: JSON.stringify(fresh, null, 2) }], `delete presentation: ${id}`);
-    alert('Deleted successfully. Files might remain in the repo but won\'t show on the site.');
+    const treeInfo = await listRepoFiles();
+    if (treeInfo.truncated) {
+      if (!confirm('Warning: GitHub returned a truncated tree (repo is huge).\nSome files may not be deleted from the repo.\nContinue anyway?')) return;
+    }
+    const prefix = `presentations/${id}/`;
+    const toDelete = (treeInfo.tree || [])
+      .filter(t => t.type === 'blob' && t.path.startsWith(prefix))
+      .map(t => ({ path: t.path, delete: true }));
+
+    fresh.presentations = fresh.presentations.filter(p => p.id !== id);
+    const revokedCount = (fresh.vouchers || []).filter(v => v.presentation_id === id).length;
+    fresh.vouchers = (fresh.vouchers || []).filter(v => v.presentation_id !== id);
+
+    await commitFiles(
+      [...toDelete, { path: 'data.json', text: JSON.stringify(fresh, null, 2) }],
+      `delete presentation: ${pres.title}`
+    );
+
+    alert(`Deleted "${pres.title}"\nFiles removed: ${toDelete.length}\nVouchers revoked: ${revokedCount}`);
     await showAdmin();
-  } catch(e) {
+  } catch (e) {
     alert('Error deleting: ' + e.message);
+    console.error(e);
   }
+};
+
+window.deleteVoucher = async (vid) => {
+  if (!confirm('Revoke this voucher? It will immediately stop working.')) return;
+  try {
+    const fresh = await fetchFreshData();
+    const v = (fresh.vouchers || []).find(x => x.id === vid);
+    if (!v) throw new Error('Voucher not found');
+    fresh.vouchers = fresh.vouchers.filter(x => x.id !== vid);
+    await commitFiles(
+      [{ path: 'data.json', text: JSON.stringify(fresh, null, 2) }],
+      `revoke voucher ${vid}`
+    );
+    alert('Voucher revoked.');
+    await showAdmin();
+  } catch (e) {
+    alert('Error revoking voucher: ' + e.message);
+  }
+};
+
+window.toggleVouchers = (pid) => {
+  const el = document.getElementById('vlist-' + pid);
+  if (el) el.classList.toggle('hidden');
 };
 
 document.getElementById('pat-save').onclick = async () => {
@@ -738,7 +797,6 @@ dropzone.ondragleave = () => dropzone.classList.remove('dragover');
 dropzone.ondrop = e => { e.preventDefault(); dropzone.classList.remove('dragover'); pick(e.dataTransfer.files); };
 fileInput.onchange = e => pick(e.target.files);
 
-// Fix #5: handle both .pptx and .pdf
 function pick(files) {
   adminPptx = null; adminPdf = null;
   const items = [];
@@ -790,6 +848,11 @@ async function commitFiles(files, message) {
 
   const treeEntries = [];
   for (const f of files) {
+    // удаление файла: sha=null
+    if (f.delete) {
+      treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
+      continue;
+    }
     const content = f.text !== undefined
       ? Crypto.bufToB64(new TextEncoder().encode(f.text))
       : Crypto.bufToB64(f.data);
@@ -824,6 +887,32 @@ async function commitFiles(files, message) {
   return newCommit.sha;
 }
 
+// Свежие данные прямо из репозитория (не из кэша браузера)
+async function fetchFreshData() {
+  const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) return { presentations: [], vouchers: [] };
+  return await r.json();
+}
+
+// Полное дерево репозитория — нужно, чтобы удалить файлы презентации
+async function listRepoFiles() {
+  const token = localStorage.getItem('gh_token');
+  const api = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`;
+  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' };
+
+  const refR = await fetch(`${api}/git/ref/heads/${CONFIG.branch}`, { headers });
+  if (!refR.ok) throw new Error(`Failed to get ref: ${refR.status}`);
+  const ref = await refR.json();
+
+  const commitR = await fetch(`${api}/git/commits/${ref.object.sha}`, { headers });
+  if (!commitR.ok) throw new Error(`Failed to get commit: ${commitR.status}`);
+  const c = await commitR.json();
+
+  const treeR = await fetch(`${api}/git/trees/${c.tree.sha}?recursive=1`, { headers });
+  if (!treeR.ok) throw new Error(`Failed to list tree: ${treeR.status}`);
+  return await treeR.json();
+}
+
 // ================= ADD PRESENTATION =================
 document.getElementById('upload-btn').onclick = async () => {
   const log = document.getElementById('log');
@@ -847,7 +936,7 @@ document.getElementById('upload-btn').onclick = async () => {
     const dir = `presentations/${id}`;
     const entries = [];
 
-    // Fix #1: no fake Ream conversion. Source is pptx if present, otherwise pdf.
+    // Источник: pptx (предпочтительно), иначе pdf
     const sourceFile = adminPptx || adminPdf;
     const sourceExt = adminPptx ? 'pptx' : 'pdf';
     logLine(`[*] Reading ${sourceFile.name}…`);
@@ -858,14 +947,14 @@ document.getElementById('upload-btn').onclick = async () => {
 
     const presSalt = crypto.getRandomValues(new Uint8Array(16));
     const kek = await Crypto.deriveRaw(master, presSalt);
-    // Fix #3: store a verifier so wrong master pw is caught at voucher-issue time
+    // Верификатор мастер-пароля (проверяется при выдаче ваучера)
     const kekCheck = await Crypto.sha256Hex(hex(kek));
 
     logLine('[*] Encrypting source file…');
     const srcIv = crypto.getRandomValues(new Uint8Array(12));
     entries.push({ path: `${dir}/source.${sourceExt}.enc`, data: await Crypto.encRaw(sourceBytes, kek, srcIv) });
 
-    // Preview: from PDF. If only pdf uploaded, preview = same file.
+    // Превью — из PDF (если загружен)
     let pdfMeta = null;
     let previewBytes = null;
     if (adminPdf) {
@@ -904,11 +993,7 @@ document.getElementById('upload-btn').onclick = async () => {
     }
 
     logLine('[*] Updating data.json…');
-    const fresh = await (async () => {
-      const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
-      if (!r.ok) return { presentations: [], vouchers: [] };
-      return await r.json();
-    })();
+    const fresh = await fetchFreshData();
     fresh.presentations = fresh.presentations || [];
     fresh.vouchers = fresh.vouchers || [];
 
@@ -972,7 +1057,7 @@ document.getElementById('voucher-issue').onclick = async () => {
   btn.disabled = true;
   try {
     const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
-    // Fix #3: verify master pw against stored check
+    // Проверка мастер-пароля
     if (pres.kek_check) {
       const check = await Crypto.sha256Hex(hex(derivedKek));
       if (check !== pres.kek_check) {
@@ -986,11 +1071,7 @@ document.getElementById('voucher-issue').onclick = async () => {
     const vi = crypto.getRandomValues(new Uint8Array(12));
     const vKey = await Crypto.deriveRaw(code, vs);
 
-    const fresh = await (async () => {
-      const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
-      if (!r.ok) return { presentations: [], vouchers: [] };
-      return await r.json();
-    })();
+    const fresh = await fetchFreshData();
     fresh.vouchers = fresh.vouchers || [];
     fresh.vouchers.push({
       id: rand(5), presentation_id: presId,
