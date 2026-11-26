@@ -1,29 +1,29 @@
 {
   "presentations": [
     {
-      "id": "6ce59a20ab",
+      "id": "740f03cc0c",
       "title": "Народы, религии на территории Индии",
       "description": "",
       "created": "2026-11-26",
       "locked": false,
       "pdf": null,
-      "kek_check": "1353577cd4a20cbf8caac1e20514d75fc37663acb27d875bebed09e1cde8c7c8",
+      "kek_check": "13382237f861a92477fd426bf647a28882d38b5810b52969efc1d545fe4cf972",
       "source": {
-        "file": "presentations/6ce59a20ab/source.pptx.enc",
-        "salt": "IOx6WPe7fYi++8Nqtj4YgQ==",
-        "iv": "pBZRNEEdaHWZSbMZ",
+        "file": "presentations/740f03cc0c/source.pptx.enc",
+        "salt": "/USzReXHeMFrk4Ehcjwckg==",
+        "iv": "vJXFzDVKpufrzKSQ",
         "original_name": "Народы, религии на территории Индии.pptx"
       }
     }
   ],
   "vouchers": [
     {
-      "id": "141fd9d93c",
-      "presentation_id": "6ce59a20ab",
-      "salt": "RBqXTNKAknDmMhEMXyfX9A==",
-      "iv": "7mn598NwsJIfg8Pm",
-      "encrypted_key": "S/LNQmhym0mcLUuvUPVm1D6o//OE12cxTtu3YrFKpwalEjtMeLmODq9RZQ0QrC/W",
-      "created": "2026-11-26T14:52:47",
+      "id": "3211ca773b",
+      "presentation_id": "740f03cc0c",
+      "salt": "7wjzEhOoqWToc8sp+dgl0w==",
+      "iv": "OEaN6o22WpS2xhTD",
+      "encrypted_key": "NcQ5KXQARlIxkm6Xs7jEUpgbKAj0s4pXuujUyeTB80qlH+zs+gu+dJtDA8TPV/EJ",
+      "created": "2026-11-26T16:20:13",
       "note": ""
     }
   ]
