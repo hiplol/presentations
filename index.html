@@ -5,62 +5,142 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Presentations</title>
 <style>
-:root{--bg:#0b0f0a;--bg2:#121712;--line:#1f2a1f;--accent:#a6ff3a;--text:#f2f7ec;--muted:#8ca38a}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif}
-a{color:var(--accent);text-decoration:none}
-.topbar{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--bg2);
-  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
-.topbar h1{font-size:18px;margin:0;flex:1;font-weight:600;text-align:center}
-.back{background:none;border:0;color:var(--muted);cursor:pointer}
-main{padding:24px;max-width:1200px;margin:0 auto}
-.grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.card{display:flex;flex-direction:column;min-height:140px;background:var(--bg2);
-  border:1px solid var(--line);border-radius:12px;padding:18px;cursor:pointer;transition:.15s}
-.card:hover{border-color:var(--accent);transform:translateY(-2px)}
-.card-head{display:flex;justify-content:space-between;gap:8px}
-.card-title{font-weight:600;font-size:16px}
-.card-desc{color:var(--muted);font-size:14px;margin:8px 0;flex:1}
-.card-foot{color:var(--muted);font-size:12px}
-.muted{color:var(--muted)}.error{color:#ff6b6b;min-height:1.2em}
-.btn{background:var(--accent);color:#0b0f0a;border:0;padding:9px 16px;border-radius:8px;
-  cursor:pointer;font-weight:600;font-size:14px}
-.btn:hover{background:#b9ff66}.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
-.hidden{display:none!important}
-.lock-screen{max-width:420px;margin:60px auto;text-align:center;background:var(--bg2);
-  border:1px solid var(--line);padding:32px;border-radius:12px}
-.lock-screen input{width:100%;padding:10px;margin:8px 0;background:var(--bg);
-  border:1px solid var(--line);color:var(--text);border-radius:8px}
-.viewer-page{user-select:none;-webkit-user-select:none}
-.pages{display:flex;flex-direction:column;gap:20px;align-items:center;padding-bottom:80px}
-.pdf-page{box-shadow:0 4px 24px rgba(0,0,0,.4);background:#fff;pointer-events:none}
-.ppt-render{max-width:960px;width:100%;background:#fff;border-radius:6px;overflow:hidden;
-  box-shadow:0 4px 24px rgba(0,0,0,.4);pointer-events:none}
-.watermark-layer{position:fixed;inset:0;pointer-events:none;background-repeat:repeat;z-index:30;opacity:.9}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;
-  justify-content:center;z-index:100;padding:20px}
-.modal-inner{background:var(--bg2);border:1px solid var(--line);border-radius:12px;
-  padding:24px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto}
-.modal-inner h2{margin-top:0}
-.modal-inner input,.modal-inner textarea,.modal-inner select{width:100%;padding:10px;
-  margin:6px 0;background:var(--bg);border:1px solid var(--line);color:var(--text);
-  border-radius:8px;font-family:inherit;font-size:14px}
-.modal-inner textarea{min-height:80px;resize:vertical}
-.modal-inner label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.dropzone{border:2px dashed var(--line);border-radius:10px;padding:24px;text-align:center;
-  color:var(--muted);margin:10px 0;cursor:pointer;transition:.15s}
-.dropzone.dragover{border-color:var(--accent);background:rgba(166,255,58,.05)}
-.log{font-family:ui-monospace,monospace;font-size:12px;background:var(--bg);
-  border:1px solid var(--line);border-radius:8px;padding:12px;max-height:200px;
-  overflow-y:auto;margin-top:12px;white-space:pre-wrap;color:var(--muted)}
-.voucher-list{font-family:ui-monospace,monospace;font-size:12px;background:var(--bg);
-  border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:8px;
-  word-break:break-all;color:var(--accent)}
-@media print{body *{display:none!important}
-  body::before{content:"Printing is disabled";display:block!important;color:#000;
-    padding:40px;font-size:24px}}
+:root {
+  --bg: #0b0f0a; --bg2: #121712; --line: #1f2a1f;
+  --accent: #a6ff3a; --text: #f2f7ec; --muted: #8ca38a;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+}
+a { color: var(--accent); text-decoration: none; }
+.topbar {
+  display: flex; align-items: center; gap: 12px; padding: 14px 22px;
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar h1 { font-size: 18px; margin: 0; flex: 1; font-weight: 600; text-align: center; }
+.back { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 14px; }
+main { padding: 24px; max-width: 1000px; margin: 0 auto; }
+
+/* Grid */
+.grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.card {
+  display: flex; flex-direction: column; min-height: 140px; background: var(--bg2);
+  border: 1px solid var(--line); border-radius: 12px; padding: 18px;
+  cursor: pointer; transition: border-color .15s, transform .15s;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card-head { display: flex; justify-content: space-between; gap: 8px; }
+.card-title { font-weight: 600; font-size: 16px; word-break: break-word; }
+.card-desc { color: var(--muted); font-size: 14px; margin: 8px 0; flex: 1; word-break: break-word; }
+.card-foot { color: var(--muted); font-size: 12px; }
+
+/* Common */
+.muted { color: var(--muted); }
+.error { color: #ff6b6b; min-height: 1.2em; margin: 8px 0; font-size: 14px; }
+.btn {
+  background: var(--accent); color: #0b0f0a; border: 0; padding: 10px 18px;
+  border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+.btn.danger { background: transparent; color: #ff6b6b; border: 1px solid #ff6b6b; }
+.hidden { display: none !important; }
+
+/* Lock Screen */
+.lock-screen {
+  max-width: 420px; margin: 60px auto; text-align: center; background: var(--bg2);
+  border: 1px solid var(--line); padding: 32px; border-radius: 12px;
+}
+.lock-screen h2 { margin-top: 0; }
+.lock-screen p { color: var(--muted); font-size: 14px; line-height: 1.5; text-align: left; }
+.lock-screen input { width: 100%; padding: 12px; margin: 12px 0; background: var(--bg);
+  border: 1px solid var(--line); color: var(--text); border-radius: 8px; font-size: 14px; outline: none; }
+.lock-screen input:focus { border-color: var(--accent); }
+
+/* Admin Panel */
+#admin-panel {
+  background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 32px; max-width: 680px; margin: 0 auto;
+}
+#admin-panel h2 { margin-top: 0; font-size: 22px; margin-bottom: 8px; }
+#admin-panel label {
+  display: block; font-size: 13px; color: var(--muted);
+  margin: 18px 0 6px 0; font-weight: 500;
+}
+#admin-panel input, #admin-panel textarea, #admin-panel select {
+  width: 100%; padding: 12px; background: var(--bg);
+  border: 1px solid var(--line); color: var(--text);
+  border-radius: 8px; font-family: inherit; font-size: 14px;
+  outline: none; margin: 0; box-sizing: border-box;
+}
+#admin-panel input:focus, #admin-panel textarea:focus, #admin-panel select:focus {
+  border-color: var(--accent);
+}
+#admin-panel textarea { min-height: 80px; resize: vertical; }
+.form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; align-items: center;}
+
+/* Dropzone */
+.dropzone {
+  border: 2px dashed var(--line); border-radius: 10px; padding: 32px 20px;
+  text-align: center; color: var(--muted); cursor: pointer; transition: all .15s;
+  background: var(--bg); margin-top: 8px;
+}
+.dropzone.dragover { border-color: var(--accent); background: rgba(166,255,58,.05); }
+.dropzone p { margin: 0; font-size: 14px; }
+.file-list { font-size: 13px; color: var(--accent); margin-top: 10px; line-height: 1.6; }
+
+/* Log */
+.log {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+  background: #000; border: 1px solid var(--line); border-radius: 8px;
+  padding: 16px; max-height: 200px; overflow-y: auto; margin-top: 16px;
+  white-space: pre-wrap; color: var(--muted); line-height: 1.5;
+}
+.log .success { color: var(--accent); }
+.log .fail { color: #ff6b6b; }
+
+hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
+
+/* Viewer */
+.viewer-page { user-select: none; -webkit-user-select: none; }
+.render-area { display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; }
+.pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; }
+.ppt-render { max-width: 960px; width: 100%; background: #fff; border-radius: 6px;
+  overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.4); pointer-events: none; }
+
+/* Watermark */
+.watermark-layer {
+  position: fixed; inset: 0; pointer-events: none;
+  background-repeat: repeat; z-index: 30; opacity: 0.9;
+}
+
+/* Modals */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex;
+  align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-inner { background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 24px; max-width: 480px; width: 100%; }
+.modal-inner h2 { margin-top: 0; }
+.modal-inner input, .modal-inner textarea {
+  width: 100%; padding: 12px; margin: 8px 0; background: var(--bg);
+  border: 1px solid var(--line); color: var(--text); border-radius: 8px;
+  font-family: inherit; font-size: 14px; outline: none; }
+.modal-inner input:focus, .modal-inner textarea:focus { border-color: var(--accent); }
+.modal-inner textarea { min-height: 80px; resize: vertical; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.voucher-list { font-family: monospace; font-size: 13px; background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+  margin-top: 12px; word-break: break-all; color: var(--accent); }
+
+@media print {
+  body * { display: none !important; }
+  body::before { content: "Printing is disabled"; display: block !important; color: #000; padding: 40px; font-size: 24px; }
+}
 </style>
 </head>
 <body>
@@ -72,73 +152,82 @@ main{padding:24px;max-width:1200px;margin:0 auto}
 </header>
 
 <main>
+  <!-- GRID VIEW -->
   <section id="grid-view"><div id="grid" class="grid"></div></section>
 
+  <!-- VIEWER VIEW -->
   <section id="viewer-view" class="hidden viewer-page">
     <div id="lock-screen" class="lock-screen hidden">
       <h2>🔒 Locked</h2>
-      <p>Enter password:</p>
-      <input id="pw-input" type="password" autocomplete="off">
-      <button id="pw-submit" class="btn">Open</button>
-      <p id="pw-error" class="error"></p>
+      <p style="text-align:center">Enter password to view this presentation:</p>
+      <input id="pw-input" type="password" autocomplete="off" placeholder="Password">
+      <button id="pw-submit" class="btn" style="width:100%">Open</button>
+      <p id="pw-error" class="error" style="text-align:center"></p>
     </div>
-    <div id="render-area"></div>
+    <div id="render-area" class="render-area"></div>
   </section>
 
+  <!-- ADMIN VIEW -->
   <section id="admin-view" class="hidden">
+    <!-- ADMIN LOGIN -->
     <div id="admin-login" class="lock-screen">
-      <h2>Admin setup</h2>
-      <p class="muted" style="text-align:left;font-size:13px">
-        One-time setup: create a GitHub fine-grained PAT with
-        <b>Contents: Read and write</b> access to this repository and paste it here.
-        Stored in localStorage of this browser only.
+      <h2>Admin Setup</h2>
+      <p>
+        One-time setup: Create a GitHub fine-grained PAT with <b>Contents: Read and write</b> access to this repository and paste it here.<br><br>
+        It will be stored in <code>localStorage</code> of this browser only.
       </p>
       <input id="pat-input" type="password" placeholder="github_pat_… or ghp_…">
-      <button id="pat-save" class="btn">Save token</button>
-      <p id="pat-status" class="muted"></p>
+      <button id="pat-save" class="btn" style="width:100%">Save token</button>
+      <p id="pat-status" class="error" style="text-align:center"></p>
     </div>
 
+    <!-- ADMIN PANEL -->
     <div id="admin-panel" class="hidden">
-      <h2 style="margin-top:0">Add presentation</h2>
-      <p class="muted" style="font-size:13px">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Add presentation</h2>
+        <button id="logout-btn" class="btn danger" style="padding: 6px 12px; font-size: 12px;">Logout</button>
+      </div>
+      <p class="muted" style="font-size:13px; margin-top:0;">
         After commit, the site is updated in ~30 seconds and visible on all devices.
       </p>
 
       <label>Master password (wrap voucher keys; keep it safe)</label>
-      <input id="master-pw" type="password" placeholder="Master password">
+      <input id="master-pw" type="password" placeholder="Enter master password">
 
       <label>Drop .pptx (required) and .pdf (optional, better view quality)</label>
       <div id="dropzone" class="dropzone">
-        Drop files here or click to select
+        <p>Drop files here or click to select</p>
         <input id="file-input" type="file" multiple accept=".pptx,.pdf" hidden>
       </div>
-      <div id="file-list" class="muted" style="font-size:13px"></div>
+      <div id="file-list" class="file-list"></div>
 
       <label>Title</label>
-      <input id="f-title" placeholder="Q4 Report 2025">
+      <input id="f-title" placeholder="e.g. Q4 Report 2025">
 
       <label>Description</label>
-      <textarea id="f-desc" placeholder="Optional"></textarea>
+      <textarea id="f-desc" placeholder="Optional description..."></textarea>
 
       <label>View password (leave empty for public)</label>
-      <input id="f-password" type="password" placeholder="Optional">
+      <input id="f-password" type="password" placeholder="Optional view password">
 
       <label>Vouchers</label>
       <input id="f-vouchers" type="number" value="1" min="1" max="20">
 
-      <div class="modal-actions">
+      <div class="form-actions">
         <button id="upload-btn" class="btn">Add presentation</button>
       </div>
+
       <div id="log" class="log hidden"></div>
 
-      <hr style="border:0;border-top:1px solid var(--line);margin:30px 0">
+      <hr>
 
       <h2>Issue another voucher</h2>
       <label>Presentation</label>
       <select id="voucher-pres"></select>
       <label>Note</label>
-      <input id="voucher-note" placeholder="for Ivan / Telegram">
-      <div class="modal-actions">
+      <input id="voucher-note" placeholder="e.g. for Ivan / Telegram">
+      
+      <div class="form-actions">
         <button id="voucher-issue" class="btn">Issue voucher</button>
       </div>
       <div id="voucher-out" class="voucher-list hidden"></div>
@@ -146,36 +235,38 @@ main{padding:24px;max-width:1200px;margin:0 auto}
   </section>
 </main>
 
+<!-- OVERLAYS -->
 <div id="watermark-layer" class="watermark-layer hidden"></div>
 
 <div id="modal" class="modal hidden">
   <div class="modal-inner">
     <h2>Copy request</h2>
-    <p class="muted">Copies the request text to clipboard — send it to the author manually.</p>
+    <p class="muted" style="font-size:13px; line-height:1.5;">Copies the request text to clipboard. Send it to the author manually.</p>
     <input id="req-contact" placeholder="Who is asking / contact">
     <textarea id="req-reason" placeholder="Reason (optional)"></textarea>
     <div class="modal-actions">
       <button id="req-cancel" class="btn ghost">Cancel</button>
       <button id="req-send" class="btn">Copy request</button>
     </div>
-    <p id="req-status" class="muted"></p>
+    <p id="req-status" class="muted" style="font-size:13px; margin-bottom:0;"></p>
   </div>
 </div>
 
 <div id="modal-voucher" class="modal hidden">
   <div class="modal-inner">
     <h2>Redeem voucher</h2>
-    <p class="muted">Enter the code you were given.</p>
+    <p class="muted" style="font-size:13px; line-height:1.5;">Enter the code you were given to download the source .pptx file.</p>
     <input id="voucher-input" placeholder="XXXX...">
     <div class="modal-actions">
       <button id="voucher-cancel" class="btn ghost">Cancel</button>
       <button id="voucher-go" class="btn">Download .pptx</button>
     </div>
-    <p id="voucher-status" class="muted"></p>
+    <p id="voucher-status" class="muted" style="font-size:13px; margin-bottom:0;"></p>
   </div>
 </div>
 
 <script>
+// ================= CONFIG =================
 const CONFIG = {
   owner: "hiplol",
   repo: "presentations",
@@ -183,6 +274,7 @@ const CONFIG = {
   siteTitle: "Presentations",
 };
 const RAW = `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/`;
+
 document.title = CONFIG.siteTitle;
 document.getElementById('page-title').textContent = CONFIG.siteTitle;
 document.getElementById('admin-btn').onclick = () => location.hash = '#admin';
@@ -234,10 +326,8 @@ const Crypto = (() => {
   return { deriveRaw, encPw, decPw, encRaw, decRaw, sha256Hex, b64ToBuf, bufToB64 };
 })();
 
-const rand = n => [...crypto.getRandomValues(new Uint8Array(n))]
-  .map(b => b.toString(16).padStart(2, '0')).join('');
-const esc = s => String(s).replace(/[&<>"']/g, c => ({
-  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rand = n => [...crypto.getRandomValues(new Uint8Array(n))].map(b => b.toString(16).padStart(2, '0')).join('');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // ================= DATA =================
 let DB = { presentations: [], vouchers: [] };
@@ -281,12 +371,15 @@ async function showGrid() {
   await loadData();
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
+  
   if (!DB.presentations.length) {
-    grid.innerHTML = '<p class="muted">No presentations yet.</p>';
+    grid.innerHTML = '<p class="muted" style="grid-column:1/-1; text-align:center; margin-top:40px;">No presentations yet. Go to Admin to add one.</p>';
     return;
   }
-  DB.presentations.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''));
-  for (const p of DB.presentations.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''))) {
+  
+  DB.presentations.sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+  
+  for (const p of DB.presentations) {
     const el = document.createElement('div');
     el.className = 'card';
     el.onclick = () => location.hash = '#v/' + encodeURIComponent(p.id);
@@ -316,14 +409,19 @@ async function showViewer(pid) {
   await loadData();
   CURRENT = DB.presentations.find(p => p.id === pid);
   if (!CURRENT) { document.getElementById('page-title').textContent = 'Not found'; return; }
+  
   document.getElementById('page-title').textContent = CURRENT.title;
   document.title = CURRENT.title;
 
   await buildWatermark();
   document.getElementById('watermark-layer').classList.remove('hidden');
 
-  if (CURRENT.locked) document.getElementById('lock-screen').classList.remove('hidden');
-  else { try { await renderSlides(null); } catch (e) { console.error(e); } }
+  if (CURRENT.locked) {
+    document.getElementById('lock-screen').classList.remove('hidden');
+  } else {
+    try { await renderSlides(null); } 
+    catch (e) { console.error(e); }
+  }
 }
 
 async function buildWatermark() {
@@ -335,7 +433,7 @@ async function buildWatermark() {
   const fp = await Crypto.sha256Hex(
     navigator.userAgent + '|' + screen.width + 'x' + screen.height +
     '|' + Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const text = `${ip}  ·  ${fp.slice(0, 8)}  ·  ${new Date().toLocaleString('en-US')}`;
+  const text = `${ip} · ${fp.slice(0, 8)} · ${new Date().toLocaleString('en-US')}`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="260">
     <text x="50%" y="50%" font-family="sans-serif" font-size="18"
       fill="rgba(120,120,120,0.16)" text-anchor="middle"
@@ -362,16 +460,23 @@ function loadCss(href) {
 async function renderSlides(password) {
   const usePdf = !!CURRENT.pdf;
   const meta = usePdf ? CURRENT.pdf : CURRENT.pptxView;
+  
   const r = await fetch(RAW + meta.file + '?t=' + Date.now(), { cache: 'no-store' });
-  if (!r.ok) throw new Error('fetch failed');
+  if (!r.ok) throw new Error('Failed to fetch presentation file');
+  
   let buf = await r.arrayBuffer();
   if (meta.encrypted) {
-    try { buf = await Crypto.decPw(buf, password, Crypto.b64ToBuf(meta.salt), Crypto.b64ToBuf(meta.iv)); }
-    catch (e) { throw new Error('bad password'); }
+    try { 
+      buf = await Crypto.decPw(buf, password, Crypto.b64ToBuf(meta.salt), Crypto.b64ToBuf(meta.iv)); 
+    } catch (e) { 
+      throw new Error('Incorrect password'); 
+    }
   }
+  
   document.getElementById('lock-screen').classList.add('hidden');
   const area = document.getElementById('render-area');
   area.innerHTML = '';
+  
   if (usePdf) await renderPdf(buf);
   else await renderPptx(buf);
 }
@@ -379,14 +484,12 @@ async function renderSlides(password) {
 async function renderPdf(bytes) {
   if (!window.pdfjsLib) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
-  const wrap = document.createElement('div');
-  wrap.className = 'pages';
-  document.getElementById('render-area').appendChild(wrap);
   const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
   const scale = Math.min(2, window.devicePixelRatio || 1);
+  const area = document.getElementById('render-area');
+  
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const vp = page.getViewport({ scale: 1.3 * scale });
@@ -394,7 +497,7 @@ async function renderPdf(bytes) {
     c.className = 'pdf-page';
     c.width = vp.width; c.height = vp.height;
     c.style.width = (vp.width / scale) + 'px';
-    wrap.appendChild(c);
+    area.appendChild(c);
     await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
   }
 }
@@ -411,32 +514,51 @@ async function renderPptx(bytes) {
   const box = document.createElement('div');
   box.className = 'ppt-render'; box.id = 'ppt-box';
   document.getElementById('render-area').appendChild(box);
+  
   await new Promise(resolve => {
     $('#ppt-box').pptxToHtml({
       pptxFileUrl: url, slideMode: false, keyBoardShortCut: false,
       slideModeConfig: { on: resolve }
     });
-    setTimeout(resolve, 8000);
+    setTimeout(resolve, 8000); // fallback
   });
 }
 
 // ================= PROTECTION =================
-['contextmenu','copy','cut','paste','dragstart','selectstart'].forEach(ev =>
-  document.addEventListener(ev, e => e.preventDefault()));
+// Block context menu and hotkeys, BUT allow inputs
+['contextmenu','copy','cut','dragstart','selectstart'].forEach(ev =>
+  document.addEventListener(ev, e => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+    e.preventDefault();
+  })
+);
+document.addEventListener('paste', e => {
+  if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+  e.preventDefault();
+});
 document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) e.preventDefault();
+  if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    e.preventDefault();
+  }
 });
 window.addEventListener('beforeprint', () => document.getElementById('render-area').style.display = 'none');
 window.addEventListener('afterprint', () => document.getElementById('render-area').style.display = '');
 
 // ================= PASSWORD =================
-document.getElementById('pw-submit').onclick = tryUnlock;
-document.getElementById('pw-input').onkeydown = e => { if (e.key === 'Enter') tryUnlock(); };
-async function tryUnlock() {
-  try { await renderSlides(document.getElementById('pw-input').value); }
-  catch (e) { document.getElementById('pw-error').textContent = 'Incorrect password'; }
-}
+document.getElementById('pw-submit').onclick = async () => {
+  const btn = document.getElementById('pw-submit');
+  btn.disabled = true; btn.textContent = 'Checking...';
+  try { 
+    await renderSlides(document.getElementById('pw-input').value); 
+  } catch (e) { 
+    document.getElementById('pw-error').textContent = 'Incorrect password'; 
+  } finally {
+    btn.disabled = false; btn.textContent = 'Open';
+  }
+};
+document.getElementById('pw-input').onkeydown = e => { if (e.key === 'Enter') document.getElementById('pw-submit').click(); };
 
 // ================= COPY REQUEST =================
 const modal = document.getElementById('modal');
@@ -447,10 +569,14 @@ document.getElementById('req-send').onclick = async () => {
   const reason = document.getElementById('req-reason').value.trim();
   const status = document.getElementById('req-status');
   if (!contact) { status.textContent = 'Contact required'; return; }
-  const text = `Copy request\n\nPresentation: ${CURRENT.title}\nID: ${CURRENT.id}\n` +
-    `Requester: ${contact}\nReason: ${reason || '—'}`;
-  try { await navigator.clipboard.writeText(text); status.textContent = 'Copied to clipboard.'; }
-  catch (e) { status.textContent = text; }
+  const text = `Copy request\n\nPresentation: ${CURRENT.title}\nID: ${CURRENT.id}\nRequester: ${contact}\nReason: ${reason || '—'}`;
+  try { 
+    await navigator.clipboard.writeText(text); 
+    status.textContent = 'Copied to clipboard.'; 
+    setTimeout(() => modal.classList.add('hidden'), 1500);
+  } catch (e) { 
+    status.textContent = 'Failed to copy. Please select and copy manually.'; 
+  }
 };
 
 // ================= VOUCHER REDEEM =================
@@ -459,28 +585,38 @@ document.getElementById('voucher-cancel').onclick = () => vModal.classList.add('
 document.getElementById('voucher-go').onclick = async () => {
   const code = document.getElementById('voucher-input').value.trim();
   const status = document.getElementById('voucher-status');
-  status.textContent = 'Checking…';
+  const btn = document.getElementById('voucher-go');
+  
+  if (!code) { status.textContent = 'Enter code'; return; }
+  status.textContent = 'Checking…'; btn.disabled = true;
+  
   try {
+    let found = false;
     for (const v of DB.vouchers) {
       if (v.presentation_id !== CURRENT.id) continue;
       try {
-        const kek = await Crypto.decPw(Crypto.b64ToBuf(v.encrypted_key), code,
-          Crypto.b64ToBuf(v.salt), Crypto.b64ToBuf(v.iv));
+        const kek = await Crypto.decPw(Crypto.b64ToBuf(v.encrypted_key), code, Crypto.b64ToBuf(v.salt), Crypto.b64ToBuf(v.iv));
         const sRes = await fetch(RAW + CURRENT.source.file + '?t=' + Date.now(), { cache: 'no-store' });
         const sCt = await sRes.arrayBuffer();
-        const pptx = await Crypto.decRaw(sCt, new Uint8Array(kek),
-          Crypto.b64ToBuf(CURRENT.source.iv));
+        const pptx = await Crypto.decRaw(sCt, new Uint8Array(kek), Crypto.b64ToBuf(CURRENT.source.iv));
+        
         const blob = new Blob([pptx], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = CURRENT.title + '.pptx'; a.click();
         URL.revokeObjectURL(url);
+        
         status.textContent = 'File downloaded.';
-        return;
-      } catch (e) {}
+        found = true;
+        break;
+      } catch (e) { /* try next voucher */ }
     }
-    status.textContent = 'Voucher does not match.';
-  } catch (e) { status.textContent = 'Error: ' + e.message; }
+    if (!found) status.textContent = 'Voucher does not match.';
+  } catch (e) { 
+    status.textContent = 'Error: ' + e.message; 
+  } finally {
+    btn.disabled = false;
+  }
 };
 
 // ================= ADMIN =================
@@ -501,9 +637,7 @@ async function showAdmin() {
     document.getElementById('admin-panel').classList.remove('hidden');
     await loadData();
     const sel = document.getElementById('voucher-pres');
-    sel.innerHTML = DB.presentations.map(p =>
-      `<option value="${p.id}">${esc(p.title)}</option>`).join('')
-      || '<option value="">(no presentations)</option>';
+    sel.innerHTML = DB.presentations.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('') || '<option value="">(no presentations)</option>';
   } else {
     document.getElementById('admin-login').classList.remove('hidden');
     document.getElementById('admin-panel').classList.add('hidden');
@@ -513,18 +647,31 @@ async function showAdmin() {
 document.getElementById('pat-save').onclick = async () => {
   const tok = document.getElementById('pat-input').value.trim();
   const st = document.getElementById('pat-status');
+  const btn = document.getElementById('pat-save');
+  
   if (!tok) { st.textContent = 'Token required'; return; }
-  st.textContent = 'Checking…';
+  st.textContent = 'Checking…'; btn.disabled = true;
+  
   try {
     const r = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`, {
       headers: { Authorization: `Bearer ${tok}` }
     });
-    if (!r.ok) throw new Error(r.status);
+    if (!r.ok) throw new Error(r.status === 401 ? 'Invalid token' : 'Access denied');
     localStorage.setItem('gh_token', tok);
     await showAdmin();
-  } catch (e) { st.textContent = 'Invalid token or no access'; }
+  } catch (e) { 
+    st.textContent = 'Error: ' + e.message; 
+  } finally {
+    btn.disabled = false;
+  }
 };
 
+document.getElementById('logout-btn').onclick = () => {
+  localStorage.removeItem('gh_token');
+  showAdmin();
+};
+
+// --- Dropzone ---
 let adminFiles = { pptx: null, pdf: null };
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('file-input');
@@ -548,10 +695,13 @@ function pick(files) {
   if (adminFiles.pptx && !t.value) t.value = adminFiles.pptx.name.replace(/\.pptx$/i, '');
 }
 
-function logLine(msg) {
+function logLine(msg, type='') {
   const el = document.getElementById('log');
   el.classList.remove('hidden');
-  el.textContent += msg + '\n';
+  const span = document.createElement('div');
+  span.className = type;
+  span.textContent = msg;
+  el.appendChild(span);
   el.scrollTop = el.scrollHeight;
 }
 
@@ -566,7 +716,7 @@ async function commitFiles(files, message) {
   };
 
   const refR = await fetch(`${api}/git/ref/heads/${CONFIG.branch}`, { headers });
-  if (!refR.ok) throw new Error(`ref: ${refR.status}`);
+  if (!refR.ok) throw new Error(`Failed to get branch ref: ${refR.status}`);
   const ref = await refR.json();
   const headSha = ref.object.sha;
 
@@ -583,7 +733,7 @@ async function commitFiles(files, message) {
       method: 'POST', headers,
       body: JSON.stringify({ content, encoding: 'base64' })
     });
-    if (!blobR.ok) throw new Error(`blob ${f.path}: ${blobR.status} ${await blobR.text()}`);
+    if (!blobR.ok) throw new Error(`Failed to upload blob: ${blobR.status}`);
     const blob = await blobR.json();
     treeEntries.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
   }
@@ -592,28 +742,32 @@ async function commitFiles(files, message) {
     method: 'POST', headers,
     body: JSON.stringify({ base_tree: baseTree, tree: treeEntries })
   });
-  if (!treeR.ok) throw new Error(`tree: ${treeR.status} ${await treeR.text()}`);
+  if (!treeR.ok) throw new Error(`Failed to create tree: ${treeR.status}`);
   const tree = await treeR.json();
 
   const newCommitR = await fetch(`${api}/git/commits`, {
     method: 'POST', headers,
     body: JSON.stringify({ message, tree: tree.sha, parents: [headSha] })
   });
-  if (!newCommitR.ok) throw new Error(`commit: ${newCommitR.status} ${await newCommitR.text()}`);
+  if (!newCommitR.ok) throw new Error(`Failed to create commit: ${newCommitR.status}`);
   const newCommit = await newCommitR.json();
 
   const updR = await fetch(`${api}/git/refs/heads/${CONFIG.branch}`, {
     method: 'PATCH', headers,
     body: JSON.stringify({ sha: newCommit.sha })
   });
-  if (!updR.ok) throw new Error(`ref update: ${updR.status} ${await updR.text()}`);
+  if (!updR.ok) throw new Error(`Failed to update ref: ${updR.status}`);
   return newCommit.sha;
 }
 
 // ================= ADD PRESENTATION =================
 document.getElementById('upload-btn').onclick = async () => {
-  document.getElementById('log').textContent = '';
+  const log = document.getElementById('log');
+  log.innerHTML = '';
+  log.classList.remove('hidden');
+  
   const btn = document.getElementById('upload-btn'); btn.disabled = true;
+  
   try {
     const master = document.getElementById('master-pw').value;
     const title = document.getElementById('f-title').value.trim();
@@ -623,7 +777,7 @@ document.getElementById('upload-btn').onclick = async () => {
 
     if (!master) throw new Error('Master password required');
     if (!title) throw new Error('Title required');
-    if (!adminFiles.pptx) throw new Error('.pptx is required for vouchers');
+    if (!adminFiles.pptx) throw new Error('.pptx file is required (needed to generate vouchers)');
 
     const id = rand(5);
     const dir = `presentations/${id}`;
@@ -631,15 +785,16 @@ document.getElementById('upload-btn').onclick = async () => {
 
     logLine(`[*] Reading ${adminFiles.pptx.name}…`);
     const pptxBytes = new Uint8Array(await adminFiles.pptx.arrayBuffer());
-    if (pptxBytes.length > 90 * 1024 * 1024)
-      throw new Error('File too big for GitHub (>90 MB)');
+    if (pptxBytes.length > 85 * 1024 * 1024) {
+      logLine(`[!] Warning: file is very large. GitHub might reject files > 100MB.`, 'fail');
+    }
 
     const presSalt = crypto.getRandomValues(new Uint8Array(16));
     const kek = await Crypto.deriveRaw(master, presSalt);
     const srcIv = crypto.getRandomValues(new Uint8Array(12));
+    
     logLine('[*] Encrypting source.pptx…');
-    entries.push({ path: `${dir}/source.pptx.enc`,
-      data: await Crypto.encRaw(pptxBytes, kek, srcIv) });
+    entries.push({ path: `${dir}/source.pptx.enc`, data: await Crypto.encRaw(pptxBytes, kek, srcIv) });
 
     let pdfMeta = null, pptxMeta = null;
     if (adminFiles.pdf) {
@@ -648,23 +803,19 @@ document.getElementById('upload-btn').onclick = async () => {
       if (viewPw) {
         const s = crypto.getRandomValues(new Uint8Array(16));
         const iv = crypto.getRandomValues(new Uint8Array(12));
-        entries.push({ path: `${dir}/slides.pdf.enc`,
-          data: await Crypto.encPw(pdfBytes, viewPw, s, iv) });
-        pdfMeta = { file: `${dir}/slides.pdf.enc`, encrypted: true,
-          salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
+        entries.push({ path: `${dir}/slides.pdf.enc`, data: await Crypto.encPw(pdfBytes, viewPw, s, iv) });
+        pdfMeta = { file: `${dir}/slides.pdf.enc`, encrypted: true, salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
       } else {
         entries.push({ path: `${dir}/slides.pdf`, data: pdfBytes });
         pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
       }
     } else {
-      logLine('[*] Encrypting slides.pptx…');
+      logLine('[*] Encrypting slides.pptx for viewing…');
       if (viewPw) {
         const s = crypto.getRandomValues(new Uint8Array(16));
         const iv = crypto.getRandomValues(new Uint8Array(12));
-        entries.push({ path: `${dir}/slides.pptx.enc`,
-          data: await Crypto.encPw(pptxBytes, viewPw, s, iv) });
-        pptxMeta = { file: `${dir}/slides.pptx.enc`, encrypted: true,
-          salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
+        entries.push({ path: `${dir}/slides.pptx.enc`, data: await Crypto.encPw(pptxBytes, viewPw, s, iv) });
+        pptxMeta = { file: `${dir}/slides.pptx.enc`, encrypted: true, salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
       } else {
         entries.push({ path: `${dir}/slides.pptx`, data: pptxBytes });
         pptxMeta = { file: `${dir}/slides.pptx`, encrypted: false };
@@ -695,6 +846,7 @@ document.getElementById('upload-btn').onclick = async () => {
     })();
     fresh.presentations = fresh.presentations || [];
     fresh.vouchers = fresh.vouchers || [];
+    
     fresh.presentations.push({
       id, title, description: desc,
       created: new Date().toISOString().slice(0, 10),
@@ -708,13 +860,13 @@ document.getElementById('upload-btn').onclick = async () => {
     fresh.vouchers.push(...newVouchers);
     entries.push({ path: 'data.json', text: JSON.stringify(fresh, null, 2) });
 
-    logLine('[*] Committing to GitHub…');
+    logLine('[*] Committing to GitHub (this may take a moment)…');
     await commitFiles(entries, `add presentation: ${title}`);
 
-    logLine(`[✓] Done. ID: ${id}`);
+    logLine(`[✓] Done!`, 'success');
     logLine('');
-    logLine('Vouchers (save now — never shown again):');
-    codes.forEach(c => logLine('  ' + c));
+    logLine('Vouchers (save now — never shown again):', 'success');
+    codes.forEach(c => logLine(`  ${c}`, 'success'));
     logLine('');
     logLine(`Live in ~30s: https://${CONFIG.owner}.github.io/${CONFIG.repo}/#v/${id}`);
 
@@ -725,9 +877,11 @@ document.getElementById('upload-btn').onclick = async () => {
     document.getElementById('f-password').value = '';
     await loadData();
   } catch (e) {
-    logLine('[!] ' + e.message);
+    logLine('[!] Error: ' + e.message, 'fail');
     console.error(e);
-  } finally { btn.disabled = false; }
+  } finally { 
+    btn.disabled = false; 
+  }
 };
 
 // ================= ISSUE VOUCHER =================
@@ -736,6 +890,8 @@ document.getElementById('voucher-issue').onclick = async () => {
   const note = document.getElementById('voucher-note').value.trim();
   const master = document.getElementById('master-pw').value;
   const out = document.getElementById('voucher-out');
+  const btn = document.getElementById('voucher-issue');
+  
   out.classList.add('hidden'); out.textContent = '';
 
   if (!presId) { out.textContent = 'No presentation selected'; out.classList.remove('hidden'); return; }
@@ -744,6 +900,7 @@ document.getElementById('voucher-issue').onclick = async () => {
   const pres = DB.presentations.find(p => p.id === presId);
   if (!pres) { out.textContent = 'Presentation not found'; out.classList.remove('hidden'); return; }
 
+  btn.disabled = true;
   try {
     const kek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
     const code = rand(16).toUpperCase();
@@ -769,8 +926,14 @@ document.getElementById('voucher-issue').onclick = async () => {
 
     out.textContent = `Voucher for "${pres.title}":\n${code}\n\nNote: ${note || '(none)'}\nCommitted — available immediately.`;
     out.classList.remove('hidden');
+    document.getElementById('voucher-note').value = '';
     await loadData();
-  } catch (e) { out.textContent = 'Error: ' + e.message; out.classList.remove('hidden'); }
+  } catch (e) { 
+    out.textContent = 'Error: ' + e.message; 
+    out.classList.remove('hidden'); 
+  } finally {
+    btn.disabled = false;
+  }
 };
 </script>
 </body>
