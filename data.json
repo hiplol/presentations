@@ -36,6 +36,25 @@
         "iv": "iBUI9b/xbga7j7pB",
         "original_name": "Народы, религии на территории Индии.pptx"
       }
+    },
+    {
+      "id": "b80e3a141a",
+      "title": "Народы, религии на территории Индии12",
+      "description": "",
+      "created": "2026-11-27",
+      "locked": false,
+      "pdf": {
+        "file": "presentations/b80e3a141a/slides.pdf",
+        "encrypted": false
+      },
+      "kek_check": "fac0ed73b125d3066f6dd27ade7f03c40bd17482de64ddf630765fbb60b08e9a",
+      "view_check": "df16d04326dc969d6c6a9f8f4b19f40cc6ddade4369efb8536cceb5308e23ae4",
+      "source": {
+        "file": "presentations/b80e3a141a/source.pptx.enc",
+        "salt": "21EbhqHdXrCocdl5Z4cPSg==",
+        "iv": "vSD0EIVcSa44WuA2",
+        "original_name": "Народы, религии на территории Индии.pptx"
+      }
     }
   ],
   "vouchers": [
@@ -68,6 +87,38 @@
       "encrypted_key": "JagHjA6Tx7+51cpQxiSV8D6h8B0zvGf0KnT5A5xfK/e/EDD9VelyoIAJy6HhIQBU41i3B42q1e5+ZxjcEZhgGY3Q+9olyMKt6/R8UQPUxinRSCs3gYTEVIAEiMUWElbvemKD55rM1adUyFnMs4YVOvZS1csW2jaPTT5i5880mHUsu4M+v13EKBR/d8MjA6L5k9ZF/SpakKZZQGlCo8G9OA==",
       "created": "2026-11-27T15:32:49",
       "expires_at": "2026-12-04T15:32:49.755Z",
+      "note": ""
+    },
+    {
+      "id": "daa1df5d76",
+      "presentation_id": "b80e3a141a",
+      "type": "download",
+      "salt": "X2ULKEXodlpIJUqWCWoNGQ==",
+      "iv": "GKlBfrKUpO4E/rFf",
+      "encrypted_key": "hbwZ53+4z71YxhllTEobBJhGp+oLlBlsFw9qCT0/uSyoYeYHRDGiAEpymbF464eh",
+      "created": "2026-11-27T15:34:24",
+      "note": ""
+    },
+    {
+      "id": "80bf63cc41",
+      "presentation_id": "b80e3a141a",
+      "type": "view",
+      "salt": "SWgFQuMh6ESFxYDpPv7lkg==",
+      "iv": "hXeBXQN+g5GNJzNu",
+      "encrypted_key": "8JSlFYcaWFuZEOOECPxxOWS1Sc+F/jOsaQCjxIWHBz/PB0pdqOAvUktO4nflWsrmNdd2t8ZkSXLzi7xDrYqcItH5BXU7CfIuX3pvADIdSPcoCt6IueJxVo6L0sIXn0h0O7pxwTAdDaxvSpoNMvsHArSnPyBJKu/B8nqu1+1iSSHUKNVuKcQtRNNH",
+      "created": "2026-11-27T15:34:24",
+      "expires_at": null,
+      "note": ""
+    },
+    {
+      "id": "4b07c562af",
+      "presentation_id": "b80e3a141a",
+      "type": "view",
+      "salt": "7/VNVSBKucvD6rYacnmwcQ==",
+      "iv": "c+P73hJNmUCv5IEl",
+      "encrypted_key": "u7SzW8bnm0o0jce1H58RPQ2vk4cQgavEZsYq4xq/cP/3o/5emY2MH2TEl6BmabpcM89Laonwmw+GVLiMnzHankkl++BCOglDAs4xj0nfmr05CVilPQLzWXq9exeCjdCx4P8Q1gmZMRwJb2i2ahkdJR2LEDo4rsAhNNMRwTz7CS2ZCsnZojikw5z+",
+      "created": "2026-11-27T15:34:24",
+      "expires_at": null,
       "note": ""
     }
   ]
