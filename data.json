@@ -16,7 +16,8 @@
         "salt": "oDWCS+Chevd/1G/OGXyWQg==",
         "iv": "937dQxxSC13BmI+L",
         "original_name": "Народы, религии на территории Индии.pptx"
-      }
+      },
+      "view_check": "6966485948eb4c06ae087e5462b5f4c21572254b6950cf8834c72d56d5b75b9b"
     },
     {
       "id": "b6777c6924",
@@ -45,6 +46,17 @@
       "iv": "Uwe8qWjLri1QzOXz",
       "encrypted_key": "BYVTV0J+GwBKrrSQHgcKT31MtBzfCgCwE+WMJVL5sNbaIhmb2dGaS9TOXDax+I/O",
       "created": "2026-11-26T17:59:29",
+      "note": ""
+    },
+    {
+      "id": "afad7c45a2",
+      "presentation_id": "cf9f28f8e4",
+      "type": "view",
+      "salt": "YNCnegMs9KOun/s47kOUaQ==",
+      "iv": "jv9gOH17pLXxSPF1",
+      "encrypted_key": "RVIw7RgsEi5cfb57I4hANkcJQMh9ApGJwhJrJNweM0T5/Qm+fikn6Bmam3iWCuG+dkW6wmOzLkVDKygcYWeU8YOeQmOchdYUqtoe78ZRJUvhF58IraWUaE1kslIDoE+KVq40+alp4wKitW8YZ/70XFk7zhe9pOB30hXOddSmOWTy4/sBmi0PJimhv1jkESs0g56NzCdB6MunknXTDIty3Q==",
+      "created": "2026-11-27T15:31:47",
+      "expires_at": "2026-12-04T15:31:47.268Z",
       "note": ""
     }
   ]
