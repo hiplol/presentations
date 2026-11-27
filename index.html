@@ -25,7 +25,6 @@ a { color: var(--accent); text-decoration: none; }
 .back { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 14px; }
 main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 
-/* Grid */
 .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 .card {
   display: flex; flex-direction: column; min-height: 140px; background: var(--bg2);
@@ -38,9 +37,9 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 .card-desc { color: var(--muted); font-size: 14px; margin: 8px 0; flex: 1; word-break: break-word; }
 .card-foot { color: var(--muted); font-size: 12px; }
 
-/* Common */
 .muted { color: var(--muted); }
 .error { color: #ff6b6b; min-height: 1.2em; margin: 8px 0; font-size: 14px; }
+.ok { color: var(--accent); }
 .btn {
   background: var(--accent); color: #0b0f0a; border: 0; padding: 10px 18px;
   border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;
@@ -52,7 +51,14 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 .btn.danger { background: transparent; color: #ff6b6b; border: 1px solid #ff6b6b; }
 .hidden { display: none !important; }
 
-/* Lock Screen */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+}
+.badge.dl { background: #2b1a1a; color: #ff9a9a; border: 1px solid #5a2020; }
+.badge.view { background: #1a2b1a; color: var(--accent); border: 1px solid #2e5a2e; }
+.badge.trusted { background: #16361a; color: var(--accent); border: 1px solid #2e7a3a; }
+
 .lock-screen {
   max-width: 420px; margin: 60px auto; text-align: center; background: var(--bg2);
   border: 1px solid var(--line); padding: 32px; border-radius: 12px;
@@ -63,7 +69,6 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
   border: 1px solid var(--line); color: var(--text); border-radius: 8px; font-size: 14px; outline: none; }
 .lock-screen input:focus { border-color: var(--accent); }
 
-/* Admin Panel */
 #admin-panel {
   background: var(--bg2); border: 1px solid var(--line);
   border-radius: 12px; padding: 32px; max-width: 680px; margin: 0 auto;
@@ -85,7 +90,6 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 #admin-panel textarea { min-height: 80px; resize: vertical; }
 .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; align-items: center;}
 
-/* Блокировка админки без пароля */
 #admin-locked-area {
   transition: all 0.3s ease;
   pointer-events: none;
@@ -105,7 +109,6 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
   display: none;
 }
 
-/* Dropzone */
 .dropzone {
   border: 2px dashed var(--line); border-radius: 10px; padding: 32px 20px;
   text-align: center; color: var(--muted); cursor: pointer; transition: all .15s;
@@ -115,17 +118,15 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 .dropzone p { margin: 0; font-size: 14px; }
 .file-list { font-size: 13px; color: var(--accent); margin-top: 10px; line-height: 1.6; }
 
-/* Log */
 .log {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
   background: #000; border: 1px solid var(--line); border-radius: 8px;
-  padding: 16px; max-height: 200px; overflow-y: auto; margin-top: 16px;
+  padding: 16px; max-height: 260px; overflow-y: auto; margin-top: 16px;
   white-space: pre-wrap; color: var(--muted); line-height: 1.5;
 }
 .log .success { color: var(--accent); }
 .log .fail { color: #ff6b6b; }
 
-/* Manage List */
 .manage-list { margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); background: var(--bg); }
 .manage-item:last-child { border-bottom: none; }
@@ -133,43 +134,39 @@ main { padding: 24px; max-width: 1000px; margin: 0 auto; }
 
 hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 
-/* Viewer */
-.viewer-page { 
+.viewer-page {
   user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
 }
 .viewer-page ::selection { background: transparent; color: inherit; }
 .viewer-page ::-moz-selection { background: transparent; color: inherit; }
 
-.render-area { 
-  display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px; 
-  transition: filter 0.2s ease-out;
+.render-area {
+  display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 80px;
+  transition: filter 0.15s ease-out;
 }
 .pdf-page { box-shadow: 0 4px 24px rgba(0,0,0,.4); background: #fff; pointer-events: none; -webkit-user-drag: none; }
 
-/* Watermark */
 .watermark-layer {
   position: fixed; inset: 0; pointer-events: none;
   background-repeat: repeat; z-index: 9999;
 }
 
-/* Modals */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex;
   align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
 .modal-inner { background: var(--bg2); border: 1px solid var(--line);
   border-radius: 12px; padding: 24px; max-width: 480px; width: 100%; }
 .modal-inner h2 { margin-top: 0; }
-.modal-inner input, .modal-inner textarea {
+.modal-inner input, .modal-inner textarea, .modal-inner select {
   width: 100%; padding: 12px; margin: 8px 0; background: var(--bg);
   border: 1px solid var(--line); color: var(--text); border-radius: 8px;
   font-family: inherit; font-size: 14px; outline: none; }
-.modal-inner input:focus, .modal-inner textarea:focus { border-color: var(--accent); }
+.modal-inner input:focus, .modal-inner textarea:focus, .modal-inner select:focus { border-color: var(--accent); }
 .modal-inner textarea { min-height: 80px; resize: vertical; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 .voucher-list { font-family: monospace; font-size: 13px; background: var(--bg);
   border: 1px solid var(--line); border-radius: 8px; padding: 12px;
-  margin-top: 12px; word-break: break-all; color: var(--accent); }
+  margin-top: 12px; word-break: break-all; color: var(--accent); white-space: pre-wrap; }
 
-/* Защита от печати */
 @media print {
   body * { display: none !important; }
   body::before { content: "Printing is disabled"; display: block !important; color: #000; padding: 40px; font-size: 24px; }
@@ -186,6 +183,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 <header class="topbar">
   <button id="back-btn" class="back hidden">← Back</button>
   <h1 id="page-title">Presentations</h1>
+  <span id="trusted-badge" class="badge trusted hidden">✓ TRUSTED VIEW</span>
   <button id="admin-btn" class="btn ghost hidden">Admin</button>
   <button id="voucher-btn" class="btn ghost hidden" style="margin-right: 8px;">Redeem voucher</button>
   <button id="request-btn" class="btn ghost hidden">Request copy</button>
@@ -226,10 +224,9 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
         After commit, the site is updated in ~5 seconds and visible on all devices.
       </p>
 
-      <label>Master password (wrap voucher keys; keep it safe) <span id="pw-warning">⚠️ Введите правильный пароль для разблокировки</span></label>
+      <label>Master password (wrap voucher keys; keep it safe) <span id="pw-warning">⚠️ Enter correct password to unlock</span></label>
       <input id="master-pw" type="password" placeholder="Enter master password">
 
-      <!-- Блокируемая область -->
       <div id="admin-locked-area">
         <label>Upload files — .pptx (source) and/or .pdf (preview)</label>
         <div id="dropzone" class="dropzone">
@@ -238,8 +235,8 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
         </div>
         <div id="file-list" class="file-list"></div>
         <p class="muted" style="font-size:12px; margin-top:6px;">
-          • Only <b>.pptx</b> → preview unavailable, but source is downloadable via voucher.<br>
-          • Only <b>.pdf</b> → used both as preview and as source.<br>
+          • Only <b>.pptx</b> → no preview, source downloadable via voucher.<br>
+          • Only <b>.pdf</b> → used as both preview and source.<br>
           • Both → .pptx is source, .pdf is preview.
         </p>
 
@@ -252,8 +249,14 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
         <label>View password (leave empty for public)</label>
         <input id="f-password" type="password" placeholder="Optional view password">
 
-        <label>Vouchers</label>
-        <input id="f-vouchers" type="number" value="1" min="1" max="20">
+        <label>Download vouchers (source file)</label>
+        <input id="f-vouchers" type="number" value="1" min="0" max="20">
+
+        <label>View vouchers (clean view: no watermark, no blur)</label>
+        <input id="f-view-vouchers" type="number" value="0" min="0" max="20">
+
+        <label>View voucher expiry, days (0 = never)</label>
+        <input id="f-view-days" type="number" value="7" min="0" max="365">
 
         <div class="form-actions">
           <button id="upload-btn" class="btn">Add presentation</button>
@@ -271,6 +274,13 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
         <h2>Issue another voucher</h2>
         <label>Presentation</label>
         <select id="voucher-pres"></select>
+        <label>Type</label>
+        <select id="voucher-type">
+          <option value="download">Download — source file</option>
+          <option value="view">View — clean PDF (no watermark/blur)</option>
+        </select>
+        <label>Expiry, days (view only, 0 = never)</label>
+        <input id="voucher-expiry" type="number" value="7" min="0" max="365">
         <label>Note</label>
         <input id="voucher-note" placeholder="e.g. for Ivan / Telegram">
 
@@ -302,11 +312,13 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
 <div id="modal-voucher" class="modal hidden">
   <div class="modal-inner">
     <h2>Redeem voucher</h2>
-    <p class="muted" style="font-size:13px; line-height:1.5;">Enter the code you were given to download the source file.</p>
+    <p class="muted" style="font-size:13px; line-height:1.5;">
+      Enter the code you were given. <b>Download</b> vouchers give the source file; <b>View</b> vouchers unlock clean view (no watermark, no blur).
+    </p>
     <input id="voucher-input" placeholder="XXXX...">
     <div class="modal-actions">
       <button id="voucher-cancel" class="btn ghost">Cancel</button>
-      <button id="voucher-go" class="btn">Download file</button>
+      <button id="voucher-go" class="btn">Apply voucher</button>
     </div>
     <p id="voucher-status" class="muted" style="font-size:13px; margin-bottom:0;"></p>
   </div>
@@ -381,20 +393,23 @@ const Crypto = (() => {
 const rand = n => [...crypto.getRandomValues(new Uint8Array(n))].map(b => b.toString(16).padStart(2, '0')).join('');
 const hex = u8 => [...u8].map(b => b.toString(16).padStart(2, '0')).join('');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const utf8 = s => new TextEncoder().encode(s);
+const fromUtf8 = b => new TextDecoder().decode(b);
+
+async function computeViewCheck(kekBytes) {
+  return await Crypto.sha256Hex(hex(kekBytes) + '|view-check-v1');
+}
 
 // ================= DATA =================
 let DB = { presentations: [], vouchers: [] };
 let CURRENT = null;
 let watermarkReady = false;
+let CLEAN_VIEW = false;
 
 async function loadData(useApi = false) {
   if (useApi) {
-    try {
-      DB = await fetchFreshData();
-      return;
-    } catch (e) {
-      console.warn('Fresh admin load failed, falling back to raw:', e);
-    }
+    try { DB = await fetchFreshData(); return; }
+    catch (e) { console.warn('Fresh admin load failed, falling back:', e); }
   }
   try {
     const r = await fetch(RAW + 'data.json?t=' + Date.now(), { cache: 'no-store' });
@@ -403,17 +418,13 @@ async function loadData(useApi = false) {
       DB = { presentations: d.presentations || [], vouchers: d.vouchers || [] };
       return;
     }
-  } catch (e) {
-    console.warn('RAW data fetch failed, trying jsDelivr fallback...', e);
-  }
+  } catch (e) { console.warn('RAW data fetch failed:', e); }
   try {
     const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (r.ok) {
       const d = await r.json();
       DB = { presentations: d.presentations || [], vouchers: d.vouchers || [] };
-    } else {
-      DB = { presentations: [], vouchers: [] };
-    }
+    } else DB = { presentations: [], vouchers: [] };
   } catch (e) {
     console.error('loadData error:', e);
     DB = { presentations: [], vouchers: [] };
@@ -433,6 +444,59 @@ async function fetchFreshData() {
   const text = await r.text();
   if (!text.trim()) return { presentations: [], vouchers: [] };
   return JSON.parse(text);
+}
+
+// ================= VIEW SESSION (clean view) =================
+const SESSION_KEY = 'view_session';
+
+async function getDeviceKey() {
+  const fp = (navigator.language || '?') + '|' +
+             (Intl.DateTimeFormat().resolvedOptions().timeZone || '?') + '|' +
+             Math.round((screen.width || 0) / 100) + 'x' + Math.round((screen.height || 0) / 100) + '|view-v2';
+  const h = await crypto.subtle.digest('SHA-256', utf8(fp));
+  return new Uint8Array(h);
+}
+
+async function storeViewSession(presId, payload) {
+  const deviceKey = await getDeviceKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const plain = JSON.stringify({
+    presentation_id: presId,
+    verify_token: payload.verify_token,
+    view_password: payload.view_password || null,
+    expires_at: payload.expires_at || null
+  });
+  const ct = await Crypto.encRaw(utf8(plain), deviceKey, iv);
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+    iv: Crypto.bufToB64(iv),
+    ct: Crypto.bufToB64(ct)
+  }));
+}
+
+async function getViewSession(presId) {
+  const raw = sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+  try {
+    const { iv, ct } = JSON.parse(raw);
+    const deviceKey = await getDeviceKey();
+    const pt = await Crypto.decRaw(Crypto.b64ToBuf(ct), deviceKey, Crypto.b64ToBuf(iv));
+    const data = JSON.parse(fromUtf8(pt));
+    if (data.presentation_id !== presId) return null;
+    if (data.expires_at && new Date(data.expires_at) < new Date()) return null;
+    return data;
+  } catch (e) { return null; }
+}
+
+async function verifyViewSession(presId, presentation) {
+  const data = await getViewSession(presId);
+  if (!data) return null;
+  if (!presentation.view_check) return null;
+  if (data.verify_token !== presentation.view_check) return null;
+  return data;
+}
+
+function clearViewSession() {
+  sessionStorage.removeItem(SESSION_KEY);
 }
 
 // ================= ROUTER =================
@@ -461,6 +525,7 @@ async function showGrid() {
   document.getElementById('viewer-view').classList.add('hidden');
   document.getElementById('admin-view').classList.add('hidden');
   document.getElementById('watermark-layer').classList.add('hidden');
+  document.getElementById('trusted-badge').classList.add('hidden');
   document.getElementById('back-btn').classList.add('hidden');
   document.getElementById('voucher-btn').classList.add('hidden');
   document.getElementById('request-btn').classList.add('hidden');
@@ -468,6 +533,7 @@ async function showGrid() {
   document.title = CONFIG.siteTitle;
   CURRENT = null;
   watermarkReady = false;
+  CLEAN_VIEW = false;
 
   await loadData();
   const grid = document.getElementById('grid');
@@ -508,6 +574,7 @@ async function showViewer(pid) {
   document.getElementById('voucher-btn').onclick = () => {
     document.getElementById('voucher-input').value = '';
     document.getElementById('voucher-status').textContent = '';
+    document.getElementById('voucher-status').className = 'muted';
     document.getElementById('modal-voucher').classList.remove('hidden');
   };
   document.getElementById('request-btn').classList.remove('hidden');
@@ -523,6 +590,7 @@ async function showViewer(pid) {
   document.getElementById('lock-screen').classList.add('hidden');
   document.getElementById('pw-error').textContent = '';
   document.getElementById('pw-input').value = '';
+  document.getElementById('trusted-badge').classList.add('hidden');
 
   await loadData();
   CURRENT = DB.presentations.find(p => p.id === pid);
@@ -537,24 +605,48 @@ async function showViewer(pid) {
   document.getElementById('page-title').textContent = CURRENT.title;
   document.title = CURRENT.title;
 
-  await buildWatermark();
-  document.getElementById('watermark-layer').classList.remove('hidden');
-  watermarkReady = true;
+  const session = await verifyViewSession(pid, CURRENT);
+  CLEAN_VIEW = !!session;
 
-  if (CURRENT.locked) {
-    document.getElementById('lock-screen').classList.remove('hidden');
-  } else {
+  if (CLEAN_VIEW) {
+    document.getElementById('watermark-layer').classList.add('hidden');
+    document.getElementById('trusted-badge').classList.remove('hidden');
+    watermarkReady = false;
+
     try {
-      await renderSlides(null);
+      if (CURRENT.locked && !session.view_password) {
+        document.getElementById('lock-screen').classList.remove('hidden');
+      } else {
+        await renderSlides(session.view_password || null, true);
+      }
     } catch (e) {
       console.error(e);
       document.getElementById('render-area').innerHTML =
         `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">❌ ${esc(e.message)}</p>`;
     }
+  } else {
+    await buildWatermark();
+    document.getElementById('watermark-layer').classList.remove('hidden');
+    watermarkReady = true;
+    startWatermarkGuard();
+
+    if (CURRENT.locked) {
+      document.getElementById('lock-screen').classList.remove('hidden');
+    } else {
+      try {
+        await renderSlides(null, false);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('render-area').innerHTML =
+          `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">❌ ${esc(e.message)}</p>`;
+      }
+    }
   }
 }
 
-async function buildWatermark() {
+// ================= WATERMARK DATA =================
+async function getWatermarkData() {
+  if (window._wmData) return window._wmData;
   let ip = '?';
   try {
     const r = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
@@ -562,19 +654,22 @@ async function buildWatermark() {
   } catch (e) {}
   let fp = '00000000';
   try {
-    fp = await Crypto.sha256Hex(
+    fp = (await Crypto.sha256Hex(
       navigator.userAgent + '|' + screen.width + 'x' + screen.height +
-      '|' + Intl.DateTimeFormat().resolvedOptions().timeZone);
+      '|' + Intl.DateTimeFormat().resolvedOptions().timeZone
+    )).slice(0, 8);
   } catch (e) {}
-  
-  const date = new Date().toLocaleString('en-US');
-  const text1 = `${ip} · ${fp.slice(0, 8)} · ${date}`;
-  const text2 = `CONFIDENTIAL · ${ip}`;
-  const text3 = `DO NOT DISTRIBUTE · ${fp.slice(0, 8)}`;
-  const text4 = `PROTECTED · ${date}`;
+  window._wmData = { ip, fp, date: new Date().toLocaleString('en-US') };
+  return window._wmData;
+}
 
+async function buildWatermark() {
+  const wm = await getWatermarkData();
+  const text1 = `${wm.ip} · ${wm.fp} · ${wm.date}`;
+  const text2 = `CONFIDENTIAL · ${wm.ip}`;
+  const text3 = `DO NOT DISTRIBUTE · ${wm.fp}`;
+  const text4 = `PROTECTED · ${wm.date}`;
   let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">`;
-  
   for (let i = 0; i < 60; i++) {
     const x = Math.random() * 1000;
     const y = Math.random() * 1000;
@@ -584,14 +679,59 @@ async function buildWatermark() {
     const color = Math.random() > 0.6 ? '#ff3333' : (Math.random() > 0.5 ? '#ffffff' : '#000000');
     const texts = [text1, text2, text3, text4];
     const t = texts[Math.floor(Math.random() * texts.length)];
-    
     svgContent += `<text x="${x}" y="${y}" font-family="monospace, sans-serif" font-size="${size}" font-weight="900" fill="${color}" opacity="${opacity}" transform="rotate(${rot} ${x} ${y})">${esc(t)}</text>`;
   }
-  
   svgContent += `</svg>`;
-  
   document.getElementById('watermark-layer').style.backgroundImage =
     `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}")`;
+}
+
+// ================= WATERMARK BAKED INTO CANVAS =================
+function drawCanvasWatermark(ctx, w, h, wm) {
+  const texts = [
+    `${wm.ip} · ${wm.fp} · ${wm.date}`,
+    `CONFIDENTIAL · ${wm.ip}`,
+    `DO NOT DISTRIBUTE · ${wm.fp}`,
+    `PROTECTED · ${wm.date}`,
+    wm.ip, wm.fp, 'CONFIDENTIAL',
+  ];
+  const cols = 6, rows = 10;
+  const cellW = w / cols, cellH = h / rows;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const count = Math.random() > 0.6 ? 2 : 1;
+      for (let j = 0; j < count; j++) {
+        const t = texts[Math.floor(Math.random() * texts.length)];
+        const size = 12 + Math.random() * 20;
+        const op = 0.08 + Math.random() * 0.22;
+        const roll = Math.random();
+        const color = roll > 0.7 ? '#ff2a2a' : roll > 0.4 ? '#1a1a1a' : '#7a7a7a';
+        const angle = -Math.PI / 4 + (Math.random() - 0.5) * 0.6;
+        const x = (c + 0.15 + Math.random() * 0.7) * cellW;
+        const y = (r + 0.15 + Math.random() * 0.7) * cellH;
+        ctx.save();
+        ctx.globalAlpha = op;
+        ctx.fillStyle = color;
+        ctx.font = `900 ${size}px monospace, sans-serif`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillText(t, 0, 0);
+        ctx.restore();
+      }
+    }
+  }
+  ctx.save();
+  ctx.globalAlpha = 0.07;
+  ctx.fillStyle = '#000';
+  ctx.font = `bold ${w * 0.09}px monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(-Math.PI / 6);
+  ctx.fillText('CONFIDENTIAL', 0, 0);
+  ctx.restore();
 }
 
 function loadScript(src) {
@@ -602,7 +742,7 @@ function loadScript(src) {
   });
 }
 
-async function renderSlides(password) {
+async function renderSlides(password, cleanView) {
   const meta = CURRENT.pdf;
   if (!meta) {
     const area = document.getElementById('render-area');
@@ -618,7 +758,7 @@ async function renderSlides(password) {
   }
 
   const r = await fetch(RAW + meta.file + '?t=' + Date.now(), { cache: 'no-store' });
-  if (!r.ok) throw new Error('Failed to download presentation file from GitHub. Check if the file exists.');
+  if (!r.ok) throw new Error('Failed to download presentation file from GitHub.');
 
   let buf = await r.arrayBuffer();
   if (meta.encrypted) {
@@ -634,7 +774,7 @@ async function renderSlides(password) {
   area.innerHTML = '<p class="muted" style="text-align:center; margin-top:20px;">Rendering slides, please wait...</p>';
 
   try {
-    await renderPdf(buf);
+    await renderPdf(buf, cleanView);
   } catch (e) {
     area.innerHTML = `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">
       ❌ Failed to render PDF.<br><br>
@@ -643,53 +783,98 @@ async function renderSlides(password) {
   }
 }
 
-async function renderPdf(bytes) {
+async function renderPdf(bytes, cleanView) {
   if (!window.pdfjsLib) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
   }
-  
   if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
     try {
       const workerRes = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
       const workerText = await workerRes.text();
-      const workerBlob = new Blob([workerText], { type: 'application/javascript' });
-      pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(workerBlob);
+      pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
+        new Blob([workerText], { type: 'application/javascript' })
+      );
     } catch (e) {
-      console.warn("Blob worker failed, trying direct URL", e);
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
   }
 
-  try {
-    const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
-    const scale = Math.min(2, window.devicePixelRatio || 1);
-    const area = document.getElementById('render-area');
-    area.innerHTML = '';
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const scale = Math.min(2, window.devicePixelRatio || 1);
+  const area = document.getElementById('render-area');
+  area.innerHTML = '';
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const vp = page.getViewport({ scale: 1.3 * scale });
-      const c = document.createElement('canvas');
-      c.className = 'pdf-page';
-      c.width = vp.width; c.height = vp.height;
-      c.style.width = (vp.width / scale) + 'px';
-      c.style.background = '#fff';
-      area.appendChild(c);
-      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-    }
-  } catch(e) {
-    throw new Error('PDF.js rendering failed: ' + e.message);
+  const wm = cleanView ? null : await getWatermarkData();
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const vp = page.getViewport({ scale: 1.3 * scale });
+    const c = document.createElement('canvas');
+    c.className = 'pdf-page';
+    c.width = vp.width; c.height = vp.height;
+    c.style.width = (vp.width / scale) + 'px';
+    c.style.background = '#fff';
+    area.appendChild(c);
+
+    const ctx = c.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    if (!cleanView && wm) drawCanvasWatermark(ctx, c.width, c.height, wm);
   }
 }
 
-// ================= EXTREME PROTECTION =================
+// ================= WATERMARK TAMPER GUARD =================
+let _wmTamperHandled = false;
+function onWatermarkTampered() {
+  if (_wmTamperHandled) return;
+  _wmTamperHandled = true;
+  const area = document.getElementById('render-area');
+  if (area) area.style.filter = 'blur(50px)';
+  setTimeout(() => { if (viewerActive()) location.reload(); }, 250);
+}
 
+function watermarkIsTampered() {
+  const wm = document.getElementById('watermark-layer');
+  if (!wm || !document.body.contains(wm)) return true;
+  const s = getComputedStyle(wm);
+  if (s.display === 'none') return true;
+  if (s.visibility === 'hidden') return true;
+  if (parseFloat(s.opacity) < 0.05) return true;
+  if (s.backgroundImage === 'none') return true;
+  if (parseInt(s.zIndex, 10) < 0) return true;
+  if (wm.offsetWidth === 0 || wm.offsetHeight === 0) return true;
+  return false;
+}
+
+setInterval(() => {
+  if (!viewerActive() || !watermarkReady || CLEAN_VIEW) return;
+  if (watermarkIsTampered()) onWatermarkTampered();
+}, 400);
+
+let _wmGuardStarted = false;
+function startWatermarkGuard() {
+  if (_wmGuardStarted) return;
+  _wmGuardStarted = true;
+  const wm = document.getElementById('watermark-layer');
+  if (!wm) return;
+  new MutationObserver(() => {
+    if (!viewerActive() || !watermarkReady || CLEAN_VIEW) return;
+    if (watermarkIsTampered()) onWatermarkTampered();
+  }).observe(wm, { attributes: true, attributeFilter: ['style', 'class'] });
+
+  new MutationObserver(() => {
+    if (!viewerActive() || !watermarkReady || CLEAN_VIEW) return;
+    if (!document.body.contains(wm)) onWatermarkTampered();
+  }).observe(document.body, { childList: true });
+}
+
+// ================= VIEWER PROTECTION =================
 function viewerActive() {
   const v = document.getElementById('viewer-view');
   return v && !v.classList.contains('hidden');
 }
 
-['contextmenu','copy','cut','dragstart','selectstart', 'drop'].forEach(ev =>
+['contextmenu','copy','cut','dragstart','selectstart','drop'].forEach(ev =>
   document.addEventListener(ev, e => {
     if (!viewerActive()) return;
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
@@ -706,26 +891,27 @@ document.addEventListener('paste', e => {
 document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
-  
-  if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) ||
-      (e.ctrlKey && k === 'u')
-  ) {
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
+
+  // In clean view we don't block devtools — user is trusted
+  if (!CLEAN_VIEW) {
+    if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) ||
+        (e.ctrlKey && k === 'u')
+    ) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
   }
 
   if (
-      e.key === 'PrintScreen' || 
+      e.key === 'PrintScreen' ||
       e.keyCode === 44 ||
       (e.metaKey && e.shiftKey && ['3','4','5'].includes(e.key))
   ) {
       try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(""); 
-        }
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText("");
       } catch (err) {}
       e.preventDefault();
       return false;
@@ -734,10 +920,9 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && ['s','p','c','a'].includes(k)) {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     e.preventDefault();
-    
     if (k === 's' || k === 'p') {
-        alert('Сохранение и печать отключены.');
-        document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Сохранение отключено.</div>';
+        alert('Saving and printing are disabled.');
+        document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Saving disabled.</div>';
         setTimeout(() => location.hash = '', 1000);
     }
   }
@@ -749,10 +934,12 @@ document.addEventListener('wheel', e => {
 }, { passive: false });
 
 function applyBlur() {
+    if (CLEAN_VIEW) return;
     const area = document.getElementById('render-area');
     if (area) area.style.filter = 'blur(40px)';
 }
 function removeBlur() {
+    if (CLEAN_VIEW) return;
     if (document.hasFocus() && !document.hidden) {
         const area = document.getElementById('render-area');
         if (area) area.style.filter = 'none';
@@ -765,13 +952,12 @@ document.addEventListener('visibilitychange', () => {
     if (document.hidden) applyBlur();
     else removeBlur();
 });
-
 document.documentElement.addEventListener('mouseleave', applyBlur);
 document.documentElement.addEventListener('mouseenter', removeBlur);
 
 let idleTimer;
 function resetIdleTimer() {
-    if (!viewerActive()) return;
+    if (!viewerActive() || CLEAN_VIEW) return;
     removeBlur();
     clearTimeout(idleTimer);
     idleTimer = setTimeout(applyBlur, 5000);
@@ -781,16 +967,22 @@ window.addEventListener('keydown', resetIdleTimer);
 window.addEventListener('scroll', resetIdleTimer);
 
 setInterval(() => {
-    if (viewerActive() && !document.hasFocus()) {
-        applyBlur();
-    }
+    if (viewerActive() && !CLEAN_VIEW && !document.hasFocus()) applyBlur();
 }, 500);
+
+// DevTools size detection (only for watermarked view)
+setInterval(() => {
+  if (!viewerActive() || CLEAN_VIEW) return;
+  const devOpen = (window.outerWidth - window.innerWidth > 160) ||
+                  (window.outerHeight - window.innerHeight > 160);
+  if (devOpen) applyBlur();
+}, 800);
 
 window.addEventListener('beforeprint', () => {
   if (viewerActive()) {
     const area = document.getElementById('render-area');
     area.dataset.savedHtml = area.innerHTML;
-    area.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Печать отключена.</div>';
+    area.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Printing disabled.</div>';
   }
 });
 window.addEventListener('afterprint', () => {
@@ -801,46 +993,37 @@ window.addEventListener('afterprint', () => {
   }
 });
 
+// Canvas exfil protection (watermarked view only)
 const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
 HTMLCanvasElement.prototype.toDataURL = function() {
-    if (viewerActive()) return ''; 
+    if (viewerActive() && !CLEAN_VIEW) return '';
     return originalToDataURL.apply(this, arguments);
 };
-
 const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
 CanvasRenderingContext2D.prototype.getImageData = function() {
-    if (viewerActive()) return new ImageData(1, 1);
+    if (viewerActive() && !CLEAN_VIEW) return new ImageData(1, 1);
     return originalGetImageData.apply(this, arguments);
 };
 
+// debugger trick (watermarked view only)
 setInterval(() => {
-    if (viewerActive()) {
+    if (viewerActive() && !CLEAN_VIEW) {
         const start = performance.now();
-        debugger; 
+        debugger;
         const end = performance.now();
         if (end - start > 100) {
-            document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">Обнаружены инструменты разработчика. Страница заблокирована.</div>';
+            document.body.innerHTML = '<div style="color:white; text-align:center; margin-top:50px; font-size:24px;">DevTools detected. Page blocked.</div>';
             throw new Error("DevTools detected");
         }
     }
 }, 1000);
-
-setInterval(() => {
-    if (viewerActive() && watermarkReady) {
-        const wm = document.getElementById('watermark-layer');
-        if (!wm || wm.classList.contains('hidden') || wm.style.display === 'none') {
-            location.reload();
-        }
-    }
-}, 1000);
-
 
 // ================= PASSWORD =================
 document.getElementById('pw-submit').onclick = async () => {
   const btn = document.getElementById('pw-submit');
   btn.disabled = true; btn.textContent = 'Checking...';
   try {
-    await renderSlides(document.getElementById('pw-input').value);
+    await renderSlides(document.getElementById('pw-input').value, CLEAN_VIEW);
   } catch (e) {
     document.getElementById('pw-error').textContent =
       e.message === 'Incorrect password or corrupted file' ? 'Incorrect password' : 'Error: ' + e.message;
@@ -874,44 +1057,109 @@ document.getElementById('voucher-cancel').onclick = () => vModal.classList.add('
 document.getElementById('voucher-input').onkeydown = e => {
   if (e.key === 'Enter') document.getElementById('voucher-go').click();
 };
+
+async function findAndDecryptVoucher(code) {
+  if (!CURRENT) return null;
+  for (const v of DB.vouchers) {
+    if (v.presentation_id !== CURRENT.id) continue;
+    try {
+      const vKey = await Crypto.deriveRaw(code, Crypto.b64ToBuf(v.salt));
+      const decrypted = await Crypto.decRaw(Crypto.b64ToBuf(v.encrypted_key), vKey, Crypto.b64ToBuf(v.iv));
+      const type = v.type || 'download';
+      if (type === 'view') {
+        const payload = JSON.parse(fromUtf8(decrypted));
+        return { type: 'view', payload, voucher: v };
+      } else {
+        return { type: 'download', kek: new Uint8Array(decrypted), voucher: v };
+      }
+    } catch (e) { /* try next */ }
+  }
+  return null;
+}
+
 document.getElementById('voucher-go').onclick = async () => {
   const code = document.getElementById('voucher-input').value.trim();
   const status = document.getElementById('voucher-status');
   const btn = document.getElementById('voucher-go');
 
-  if (!code) { status.textContent = 'Enter code'; return; }
-  if (!CURRENT || !CURRENT.source || !CURRENT.source.file) {
-    status.textContent = 'Source file not available for this presentation.';
-    return;
-  }
-  status.textContent = 'Checking…'; btn.disabled = true;
+  if (!code) { status.textContent = 'Enter code'; status.className = 'error'; return; }
+  if (!CURRENT) { status.textContent = 'No presentation loaded'; status.className = 'error'; return; }
+
+  status.textContent = 'Checking…'; status.className = 'muted';
+  btn.disabled = true;
 
   try {
-    let found = false;
-    for (const v of DB.vouchers) {
-      if (v.presentation_id !== CURRENT.id) continue;
-      try {
-        const kek = await Crypto.decPw(Crypto.b64ToBuf(v.encrypted_key), code, Crypto.b64ToBuf(v.salt), Crypto.b64ToBuf(v.iv));
-        const sRes = await fetch(RAW + CURRENT.source.file + '?t=' + Date.now(), { cache: 'no-store' });
-        const sCt = await sRes.arrayBuffer();
-        const plain = await Crypto.decRaw(sCt, new Uint8Array(kek), Crypto.b64ToBuf(CURRENT.source.iv));
-
-        const fname = CURRENT.source.original_name
-          || (CURRENT.title + (CURRENT.source.file.endsWith('.pdf.enc') ? '.pdf' : '.pptx'));
-        const blob = new Blob([plain], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = fname; a.click();
-        URL.revokeObjectURL(url);
-
-        status.textContent = 'File downloaded.';
-        found = true;
-        break;
-      } catch (e) { /* try next voucher */ }
+    const result = await findAndDecryptVoucher(code);
+    if (!result) {
+      status.textContent = 'Voucher does not match.';
+      status.className = 'error';
+      return;
     }
-    if (!found) status.textContent = 'Voucher does not match.';
+
+    if (result.type === 'view') {
+      const p = result.payload;
+      if (!CURRENT.view_check) {
+        status.textContent = 'This presentation does not support view vouchers.';
+        status.className = 'error';
+        return;
+      }
+      if (p.verify_token !== CURRENT.view_check) {
+        status.textContent = 'Voucher signature mismatch.';
+        status.className = 'error';
+        return;
+      }
+      if (p.expires_at && new Date(p.expires_at) < new Date()) {
+        status.textContent = 'Voucher expired.';
+        status.className = 'error';
+        return;
+      }
+
+      await storeViewSession(CURRENT.id, p);
+      CLEAN_VIEW = true;
+      document.getElementById('trusted-badge').classList.remove('hidden');
+      document.getElementById('watermark-layer').classList.add('hidden');
+      watermarkReady = false;
+
+      try {
+        await renderSlides(p.view_password || null, true);
+      } catch (e) {
+        status.textContent = 'Unlocked, but failed to render: ' + e.message;
+        status.className = 'error';
+        return;
+      }
+
+      status.textContent = '✓ Clean view unlocked. No watermark, no blur.';
+      status.className = 'ok';
+      setTimeout(() => vModal.classList.add('hidden'), 1200);
+      return;
+    }
+
+    // download voucher
+    if (!CURRENT.source || !CURRENT.source.file) {
+      status.textContent = 'Source file not available for this presentation.';
+      status.className = 'error';
+      return;
+    }
+
+    const sRes = await fetch(RAW + CURRENT.source.file + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!sRes.ok) throw new Error('Failed to fetch source file');
+    const sCt = await sRes.arrayBuffer();
+    const plain = await Crypto.decRaw(sCt, result.kek, Crypto.b64ToBuf(CURRENT.source.iv));
+
+    const fname = CURRENT.source.original_name
+      || (CURRENT.title + (CURRENT.source.file.endsWith('.pdf.enc') ? '.pdf' : '.pptx'));
+    const blob = new Blob([plain], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fname; a.click();
+    URL.revokeObjectURL(url);
+
+    status.textContent = '✓ File downloaded.';
+    status.className = 'ok';
+    setTimeout(() => vModal.classList.add('hidden'), 1200);
   } catch (e) {
     status.textContent = 'Error: ' + e.message;
+    status.className = 'error';
   } finally {
     btn.disabled = false;
   }
@@ -924,6 +1172,7 @@ async function showAdmin() {
   document.getElementById('viewer-view').classList.add('hidden');
   document.getElementById('admin-view').classList.remove('hidden');
   document.getElementById('watermark-layer').classList.add('hidden');
+  document.getElementById('trusted-badge').classList.add('hidden');
   document.getElementById('back-btn').classList.remove('hidden');
   document.getElementById('back-btn').onclick = () => location.hash = '';
   document.getElementById('voucher-btn').classList.add('hidden');
@@ -931,13 +1180,13 @@ async function showAdmin() {
   document.getElementById('page-title').textContent = 'Admin';
   document.title = 'Admin';
   watermarkReady = false;
+  CLEAN_VIEW = false;
 
   const token = localStorage.getItem('gh_token');
   if (token) {
     document.getElementById('admin-login').classList.add('hidden');
     document.getElementById('admin-panel').classList.remove('hidden');
-    
-    // Логика блокировки визуала
+
     const masterPwInput = document.getElementById('master-pw');
     const lockedArea = document.getElementById('admin-locked-area');
     const pwWarning = document.getElementById('pw-warning');
@@ -951,7 +1200,6 @@ async function showAdmin() {
             pwWarning.style.display = 'inline';
         }
     }
-
     masterPwInput.removeEventListener('input', updateAdminLockState);
     masterPwInput.addEventListener('input', updateAdminLockState);
     updateAdminLockState();
@@ -967,12 +1215,14 @@ async function showAdmin() {
     } else {
       list.innerHTML = DB.presentations.map(p => {
         const pvs = (DB.vouchers || []).filter(v => v.presentation_id === p.id);
+        const dl = pvs.filter(v => (v.type || 'download') === 'download').length;
+        const vw = pvs.filter(v => v.type === 'view').length;
         return `
           <div class="manage-item" style="flex-direction:column; align-items:stretch; gap:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
               <span>
                 ${esc(p.title)}
-                <span class="muted" style="font-size:12px;">· ${pvs.length} voucher${pvs.length===1?'':'s'}</span>
+                <span class="muted" style="font-size:12px;">· ${dl} DL, ${vw} view</span>
                 ${p.pdf ? '' : '<span style="color:#ff6b6b;font-size:12px;"> · no preview</span>'}
                 ${p.locked ? ' 🔒' : ''}
               </span>
@@ -982,17 +1232,23 @@ async function showAdmin() {
               </div>
             </div>
             <div id="vlist-${p.id}" class="hidden" style="font-size:12px;">
-              ${pvs.length ? pvs.map(v => `
+              ${pvs.length ? pvs.map(v => {
+                const t = v.type || 'download';
+                const badge = t === 'view'
+                  ? '<span class="badge view">VIEW</span>'
+                  : '<span class="badge dl">DL</span>';
+                const exp = v.expires_at ? ` · expires ${esc(v.expires_at)}` : '';
+                return `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-top:1px solid var(--line); gap:8px;">
                   <span class="muted" style="word-break:break-all;">
-                    <code>${esc(v.id)}</code> · ${esc(v.created || '')}${v.note ? ' · ' + esc(v.note) : ''}
+                    ${badge}
+                    <code>${esc(v.id)}</code> · ${esc(v.created || '')}${exp}${v.note ? ' · ' + esc(v.note) : ''}
                   </span>
                   <button class="btn danger" style="padding:2px 6px;font-size:11px;flex-shrink:0;" onclick="deleteVoucher('${v.id}')">Revoke</button>
-                </div>
-              `).join('') : '<div class="muted" style="padding:6px 0;">No vouchers</div>'}
+                </div>`;
+              }).join('') : '<div class="muted" style="padding:6px 0;">No vouchers</div>'}
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
   } else {
@@ -1003,51 +1259,42 @@ async function showAdmin() {
 
 window.deletePres = async (id) => {
   const master = document.getElementById('master-pw').value;
-  if (!master) return alert("Введите мастер-пароль (поле вверху), чтобы разблокировать удаление.");
+  if (!master) return alert("Enter master password (top field) to unlock deletion.");
 
   try {
     const fresh = await fetchFreshData();
     const pres = fresh.presentations.find(p => p.id === id);
     if (!pres) throw new Error('Presentation not found in data.json');
 
-    let isPasswordCorrect = false;
-    
-    // 1. Быстрая проверка через хэш (для новых презентаций)
+    let ok = false;
     if (pres.kek_check && pres.source && pres.source.salt) {
       const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
       const check = await Crypto.sha256Hex(hex(derivedKek));
-      if (check === pres.kek_check) isPasswordCorrect = true;
-    } 
-    // 2. Медленная проверка расшифровкой (для старых презентаций без хэша)
-    else if (pres.source && pres.source.salt && pres.source.iv) {
+      if (check === pres.kek_check) ok = true;
+    } else if (pres.source && pres.source.salt && pres.source.iv) {
       try {
         const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
         const r = await fetch(RAW + pres.source.file);
         if (r.ok) {
             const buf = await r.arrayBuffer();
             await Crypto.decRaw(buf, derivedKek, Crypto.b64ToBuf(pres.source.iv));
-            isPasswordCorrect = true;
+            ok = true;
         }
       } catch (e) {}
     }
 
-    if (!isPasswordCorrect) {
-      throw new Error('Неверный мастер-пароль. Удаление отменено.');
-    }
+    if (!ok) throw new Error('Wrong master password. Deletion cancelled.');
 
-    if (!confirm('Delete this presentation?\n\n• All files in presentations/' + id + '/ will be removed from the repo\n• All its vouchers will be revoked\n\nThis cannot be undone.')) return;
+    if (!confirm('Delete this presentation?\n\n• All files in presentations/' + id + '/ will be removed\n• All vouchers revoked\n\nCannot be undone.')) return;
 
     const treeInfo = await listRepoFiles();
-    if (treeInfo.truncated) {
-      if (!confirm('Warning: GitHub returned a truncated tree (repo is huge).\nSome files may not be deleted from the repo.\nContinue anyway?')) return;
-    }
     const prefix = `presentations/${id}/`;
     const toDelete = (treeInfo.tree || [])
       .filter(t => t.type === 'blob' && t.path.startsWith(prefix))
       .map(t => ({ path: t.path, delete: true }));
 
     fresh.presentations = fresh.presentations.filter(p => p.id !== id);
-    const revokedCount = (fresh.vouchers || []).filter(v => v.presentation_id === id).length;
+    const revoked = (fresh.vouchers || []).filter(v => v.presentation_id === id).length;
     fresh.vouchers = (fresh.vouchers || []).filter(v => v.presentation_id !== id);
 
     await commitFiles(
@@ -1055,30 +1302,28 @@ window.deletePres = async (id) => {
       `delete presentation: ${pres.title}`
     );
 
-    alert(`Deleted "${pres.title}"\nFiles removed: ${toDelete.length}\nVouchers revoked: ${revokedCount}`);
+    alert(`Deleted "${pres.title}"\nFiles removed: ${toDelete.length}\nVouchers revoked: ${revoked}`);
     await showAdmin();
   } catch (e) {
     alert('Error: ' + e.message);
-    console.error(e);
   }
 };
 
 window.deleteVoucher = async (vid) => {
   const master = document.getElementById('master-pw').value;
-  if (!master) return alert("Введите мастер-пароль (поле вверху), чтобы разблокировать отзыв ваучера.");
+  if (!master) return alert("Enter master password (top field) to unlock voucher revocation.");
 
   try {
     const fresh = await fetchFreshData();
     const v = (fresh.vouchers || []).find(x => x.id === vid);
     if (!v) throw new Error('Voucher not found');
-
     const pres = fresh.presentations.find(p => p.id === v.presentation_id);
-    
-    let isPasswordCorrect = false;
+
+    let ok = false;
     if (pres && pres.kek_check && pres.source && pres.source.salt) {
       const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
       const check = await Crypto.sha256Hex(hex(derivedKek));
-      if (check === pres.kek_check) isPasswordCorrect = true;
+      if (check === pres.kek_check) ok = true;
     } else if (pres && pres.source && pres.source.salt && pres.source.iv) {
       try {
         const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
@@ -1086,16 +1331,13 @@ window.deleteVoucher = async (vid) => {
         if (r.ok) {
             const buf = await r.arrayBuffer();
             await Crypto.decRaw(buf, derivedKek, Crypto.b64ToBuf(pres.source.iv));
-            isPasswordCorrect = true;
+            ok = true;
         }
       } catch (e) {}
     }
 
-    if (!isPasswordCorrect) {
-      throw new Error('Неверный мастер-пароль. Отзыв ваучера отменен.');
-    }
-
-    if (!confirm('Revoke this voucher? It will immediately stop working.')) return;
+    if (!ok) throw new Error('Wrong master password. Revocation cancelled.');
+    if (!confirm('Revoke this voucher? It will stop working immediately.')) return;
 
     fresh.vouchers = fresh.vouchers.filter(x => x.id !== vid);
     await commitFiles(
@@ -1190,7 +1432,6 @@ async function commitFiles(files, message) {
     Accept: 'application/vnd.github+json',
     'Content-Type': 'application/json'
   };
-
   const MAX_RETRIES = 3;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -1212,7 +1453,7 @@ async function commitFiles(files, message) {
           continue;
         }
         const content = f.text !== undefined
-          ? Crypto.bufToB64(new TextEncoder().encode(f.text))
+          ? Crypto.bufToB64(utf8(f.text))
           : Crypto.bufToB64(f.data);
         const blobR = await fetch(`${api}/git/blobs`, {
           method: 'POST', headers,
@@ -1242,26 +1483,18 @@ async function commitFiles(files, message) {
         body: JSON.stringify({ sha: newCommit.sha })
       });
 
-      if (updR.ok) {
-        return newCommit.sha;
-      }
-
+      if (updR.ok) return newCommit.sha;
       if (updR.status === 422) {
         const errBody = await updR.text();
-        if (errBody.toLowerCase().includes('fast forward')) {
-          if (attempt < MAX_RETRIES) {
-            console.warn(`[commitFiles] 422 fast-forward, retry ${attempt}/${MAX_RETRIES}...`);
-            await new Promise(r => setTimeout(r, 1000 * attempt));
-            continue;
-          }
+        if (errBody.toLowerCase().includes('fast forward') && attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+          continue;
         }
         throw new Error(`Failed to update ref (422): ${errBody}`);
       }
-
       throw new Error(`Failed to update ref: ${updR.status}`);
     } catch (e) {
       if (attempt === MAX_RETRIES) throw e;
-      console.warn(`[commitFiles] Attempt ${attempt} failed: ${e.message}. Retrying...`);
       await new Promise(r => setTimeout(r, 1000 * attempt));
     }
   }
@@ -1290,7 +1523,6 @@ document.getElementById('upload-btn').onclick = async () => {
   const log = document.getElementById('log');
   log.innerHTML = '';
   log.classList.remove('hidden');
-
   const btn = document.getElementById('upload-btn'); btn.disabled = true;
 
   try {
@@ -1298,11 +1530,14 @@ document.getElementById('upload-btn').onclick = async () => {
     const title = document.getElementById('f-title').value.trim();
     const desc = document.getElementById('f-desc').value.trim();
     const viewPw = document.getElementById('f-password').value;
-    const vcount = Math.max(1, parseInt(document.getElementById('f-vouchers').value) || 1);
+    const dlCount = Math.max(0, parseInt(document.getElementById('f-vouchers').value) || 0);
+    const viewCount = Math.max(0, parseInt(document.getElementById('f-view-vouchers').value) || 0);
+    const viewDays = Math.max(0, parseInt(document.getElementById('f-view-days').value) || 0);
 
     if (!master) throw new Error('Master password required');
     if (!title) throw new Error('Title required');
     if (!adminPptx && !adminPdf) throw new Error('Upload a .pptx and/or .pdf file');
+    if (dlCount + viewCount === 0) throw new Error('At least one voucher (download or view) required');
 
     const id = rand(5);
     const dir = `presentations/${id}`;
@@ -1313,12 +1548,13 @@ document.getElementById('upload-btn').onclick = async () => {
     logLine(`[*] Reading ${sourceFile.name}…`);
     const sourceBytes = new Uint8Array(await sourceFile.arrayBuffer());
     if (sourceBytes.length > 85 * 1024 * 1024) {
-      logLine(`[!] Warning: file is very large. GitHub might reject files > 100MB.`, 'fail');
+      logLine(`[!] Warning: file is very large. GitHub may reject files > 100MB.`, 'fail');
     }
 
     const presSalt = crypto.getRandomValues(new Uint8Array(16));
     const kek = await Crypto.deriveRaw(master, presSalt);
     const kekCheck = await Crypto.sha256Hex(hex(kek));
+    const viewCheck = await computeViewCheck(kek);
 
     logLine('[*] Encrypting source file…');
     const srcIv = crypto.getRandomValues(new Uint8Array(12));
@@ -1342,23 +1578,52 @@ document.getElementById('upload-btn').onclick = async () => {
         pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
       }
     } else {
-      logLine('[!] No .pdf uploaded — in-browser preview will be unavailable (source can still be shared via vouchers).', 'fail');
+      logLine('[!] No .pdf — preview unavailable, source still downloadable via voucher.', 'fail');
     }
 
-    logLine(`[*] Generating ${vcount} voucher(s)…`);
-    const newVouchers = [], codes = [];
-    for (let i = 0; i < vcount; i++) {
+    const newVouchers = [];
+    const dlCodes = [], viewCodes = [];
+    const expiresAt = viewDays > 0
+      ? new Date(Date.now() + viewDays * 24 * 3600 * 1000).toISOString()
+      : null;
+
+    // download vouchers
+    logLine(`[*] Generating ${dlCount} download voucher(s)…`);
+    for (let i = 0; i < dlCount; i++) {
       const code = rand(16).toUpperCase();
       const vs = crypto.getRandomValues(new Uint8Array(16));
       const vi = crypto.getRandomValues(new Uint8Array(12));
       const vKey = await Crypto.deriveRaw(code, vs);
       newVouchers.push({
-        id: rand(5), presentation_id: id,
+        id: rand(5), presentation_id: id, type: 'download',
         salt: Crypto.bufToB64(vs), iv: Crypto.bufToB64(vi),
         encrypted_key: Crypto.bufToB64(await Crypto.encRaw(kek, vKey, vi)),
         created: new Date().toISOString().slice(0, 19), note: '',
       });
-      codes.push(code);
+      dlCodes.push(code);
+    }
+
+    // view vouchers
+    logLine(`[*] Generating ${viewCount} view voucher(s)…`);
+    for (let i = 0; i < viewCount; i++) {
+      const code = rand(16).toUpperCase();
+      const vs = crypto.getRandomValues(new Uint8Array(16));
+      const vi = crypto.getRandomValues(new Uint8Array(12));
+      const vKey = await Crypto.deriveRaw(code, vs);
+      const payload = JSON.stringify({
+        verify_token: viewCheck,
+        view_password: viewPw || null,
+        expires_at: expiresAt,
+      });
+      newVouchers.push({
+        id: rand(5), presentation_id: id, type: 'view',
+        salt: Crypto.bufToB64(vs), iv: Crypto.bufToB64(vi),
+        encrypted_key: Crypto.bufToB64(await Crypto.encRaw(utf8(payload), vKey, vi)),
+        created: new Date().toISOString().slice(0, 19),
+        expires_at: expiresAt,
+        note: '',
+      });
+      viewCodes.push(code);
     }
 
     logLine('[*] Updating data.json…');
@@ -1372,6 +1637,7 @@ document.getElementById('upload-btn').onclick = async () => {
       locked: !!viewPw && !!pdfMeta,
       pdf: pdfMeta,
       kek_check: kekCheck,
+      view_check: viewCheck,
       source: {
         file: `${dir}/source.${sourceExt}.enc`,
         salt: Crypto.bufToB64(presSalt),
@@ -1382,13 +1648,20 @@ document.getElementById('upload-btn').onclick = async () => {
     fresh.vouchers.push(...newVouchers);
     entries.push({ path: 'data.json', text: JSON.stringify(fresh, null, 2) });
 
-    logLine('[*] Committing to GitHub (this may take a moment)…');
+    logLine('[*] Committing to GitHub…');
     await commitFiles(entries, `add presentation: ${title}`);
 
     logLine(`[✓] Done!`, 'success');
     logLine('');
-    logLine('Vouchers (save now — never shown again):', 'success');
-    codes.forEach(c => logLine(`  ${c}`, 'success'));
+    if (dlCodes.length) {
+      logLine('Download vouchers (save now — never shown again):', 'success');
+      dlCodes.forEach(c => logLine(`  ${c}`, 'success'));
+    }
+    if (viewCodes.length) {
+      logLine('');
+      logLine(`View vouchers (clean PDF, expires: ${expiresAt || 'never'}):`, 'success');
+      viewCodes.forEach(c => logLine(`  ${c}`, 'success'));
+    }
     logLine('');
     logLine(`Live in ~5s: https://${CONFIG.owner}.github.io/${CONFIG.repo}/#v/${id}`);
 
@@ -1409,6 +1682,8 @@ document.getElementById('upload-btn').onclick = async () => {
 // ================= ISSUE VOUCHER =================
 document.getElementById('voucher-issue').onclick = async () => {
   const presId = document.getElementById('voucher-pres').value;
+  const type = document.getElementById('voucher-type').value;
+  const days = Math.max(0, parseInt(document.getElementById('voucher-expiry').value) || 0);
   const note = document.getElementById('voucher-note').value.trim();
   const master = document.getElementById('master-pw').value;
   const out = document.getElementById('voucher-out');
@@ -1429,46 +1704,76 @@ document.getElementById('voucher-issue').onclick = async () => {
     if (!pres) throw new Error('Presentation not found');
     if (!pres.source || !pres.source.salt) throw new Error('Source not available for this presentation');
 
-    let isPasswordCorrect = false;
+    let ok = false;
     if (pres.kek_check) {
       const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
       const check = await Crypto.sha256Hex(hex(derivedKek));
-      if (check === pres.kek_check) isPasswordCorrect = true;
+      if (check === pres.kek_check) ok = true;
     } else if (pres.source.salt && pres.source.iv) {
-       try {
+      try {
         const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
         const r = await fetch(RAW + pres.source.file);
         if (r.ok) {
             const buf = await r.arrayBuffer();
             await Crypto.decRaw(buf, derivedKek, Crypto.b64ToBuf(pres.source.iv));
-            isPasswordCorrect = true;
+            ok = true;
         }
       } catch (e) {}
     }
+    if (!ok) throw new Error('Master password is wrong for this presentation');
 
-    if (!isPasswordCorrect) {
-      throw new Error('Master password is wrong for this presentation');
-    }
-    
-    const derivedKek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
-    const kek = derivedKek;
+    const kek = await Crypto.deriveRaw(master, Crypto.b64ToBuf(pres.source.salt));
 
     const code = rand(16).toUpperCase();
     const vs = crypto.getRandomValues(new Uint8Array(16));
     const vi = crypto.getRandomValues(new Uint8Array(12));
     const vKey = await Crypto.deriveRaw(code, vs);
 
-    fresh.vouchers.push({
-      id: rand(5), presentation_id: presId,
-      salt: Crypto.bufToB64(vs), iv: Crypto.bufToB64(vi),
-      encrypted_key: Crypto.bufToB64(await Crypto.encRaw(kek, vKey, vi)),
-      created: new Date().toISOString().slice(0, 19), note,
-    });
+    let voucher;
+    if (type === 'view') {
+      if (!pres.view_check) {
+        // legacy presentation: compute view_check from kek and store it
+        pres.view_check = await computeViewCheck(kek);
+        logLine('[*] Computed view_check for legacy presentation');
+      }
+      const expiresAt = days > 0
+        ? new Date(Date.now() + days * 24 * 3600 * 1000).toISOString()
+        : null;
+      // Try to recover view password if presentation is locked
+      let viewPassword = null;
+      if (pres.locked && pres.pdf && pres.pdf.encrypted) {
+        // Admin needs to enter view password here — we can't recover it.
+        // Ask the admin
+        viewPassword = prompt('This presentation is password-protected. Enter the VIEW password to embed in the voucher (so trusted user can see clean PDF):');
+        if (!viewPassword) throw new Error('View password required for locked presentation');
+      }
+      const payload = JSON.stringify({
+        verify_token: pres.view_check,
+        view_password: viewPassword,
+        expires_at: expiresAt,
+      });
+      voucher = {
+        id: rand(5), presentation_id: presId, type: 'view',
+        salt: Crypto.bufToB64(vs), iv: Crypto.bufToB64(vi),
+        encrypted_key: Crypto.bufToB64(await Crypto.encRaw(utf8(payload), vKey, vi)),
+        created: new Date().toISOString().slice(0, 19),
+        expires_at: expiresAt, note,
+      };
+    } else {
+      voucher = {
+        id: rand(5), presentation_id: presId, type: 'download',
+        salt: Crypto.bufToB64(vs), iv: Crypto.bufToB64(vi),
+        encrypted_key: Crypto.bufToB64(await Crypto.encRaw(kek, vKey, vi)),
+        created: new Date().toISOString().slice(0, 19), note,
+      };
+    }
 
+    fresh.vouchers.push(voucher);
     await commitFiles([{ path: 'data.json', text: JSON.stringify(fresh, null, 2) }],
-      `voucher for ${pres.title}${note ? ' (' + note + ')' : ''}`);
+      `${type} voucher for ${pres.title}${note ? ' (' + note + ')' : ''}`);
 
-    out.textContent = `Voucher for "${pres.title}":\n${code}\n\nNote: ${note || '(none)'}\nCommitted — available immediately.`;
+    const expLine = voucher.expires_at ? `\nExpires: ${voucher.expires_at}` : '';
+    out.textContent = `${type.toUpperCase()} voucher for "${pres.title}":\n${code}${expLine}\n\nNote: ${note || '(none)'}\nCommitted — available immediately.`;
     out.classList.remove('hidden');
     document.getElementById('voucher-note').value = '';
     await showAdmin();
