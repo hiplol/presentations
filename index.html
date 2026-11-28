@@ -239,6 +239,11 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
           • Only <b>.pdf</b> → used as both preview and source.<br>
           • Both → .pptx is source, .pdf is preview.
         </p>
+        <p style="font-size:12px; margin-top:6px; color:#ff9a9a; line-height:1.5;">
+          ⚠️ <b>No view password = PDF is public on GitHub.</b> Anyone can download it directly
+          and bypass any watermark. The "clean view voucher" only makes sense for password-protected
+          presentations. Use "no password" only for content that can be public.
+        </p>
 
         <label>Title</label>
         <input id="f-title" placeholder="e.g. Q4 Report 2025">
@@ -396,15 +401,28 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const utf8 = s => new TextEncoder().encode(s);
 const fromUtf8 = b => new TextDecoder().decode(b);
 
-async function computeViewCheck(kekBytes) {
-  return await Crypto.sha256Hex(hex(kekBytes) + '|view-check-v1');
-}
-
 // ================= DATA =================
 let DB = { presentations: [], vouchers: [] };
 let CURRENT = null;
 let watermarkReady = false;
-let CLEAN_VIEW = false;
+
+// ================= CLEAN-VIEW CAPABILITY =================
+// Replaces the old boolean CLEAN_VIEW. Capability is granted ONLY after
+// a successful decryption of the PDF using a password that came from a
+// verified voucher-backed session. No public value can satisfy it.
+let cleanCapability = null;
+
+function isCleanView() {
+  return cleanCapability !== null
+      && CURRENT !== null
+      && cleanCapability.presId === CURRENT.id;
+}
+function grantCleanView(presId) {
+  cleanCapability = { presId };
+}
+function clearCleanView() {
+  cleanCapability = null;
+}
 
 async function loadData(useApi = false) {
   if (useApi) {
@@ -446,7 +464,10 @@ async function fetchFreshData() {
   return JSON.parse(text);
 }
 
-// ================= VIEW SESSION (clean view) =================
+// ================= VIEW SESSION =================
+// A session only proves "the user previously redeemed a voucher". It does NOT
+// prove clean-view access by itself. Actual clean view is granted only after
+// the PDF decrypts successfully with the password carried in the session.
 const SESSION_KEY = 'view_session';
 
 async function getDeviceKey() {
@@ -462,7 +483,6 @@ async function storeViewSession(presId, payload) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const plain = JSON.stringify({
     presentation_id: presId,
-    verify_token: payload.verify_token,
     view_password: payload.view_password || null,
     expires_at: payload.expires_at || null
   });
@@ -485,14 +505,6 @@ async function getViewSession(presId) {
     if (data.expires_at && new Date(data.expires_at) < new Date()) return null;
     return data;
   } catch (e) { return null; }
-}
-
-async function verifyViewSession(presId, presentation) {
-  const data = await getViewSession(presId);
-  if (!data) return null;
-  if (!presentation.view_check) return null;
-  if (data.verify_token !== presentation.view_check) return null;
-  return data;
 }
 
 function clearViewSession() {
@@ -529,11 +541,14 @@ async function showGrid() {
   document.getElementById('back-btn').classList.add('hidden');
   document.getElementById('voucher-btn').classList.add('hidden');
   document.getElementById('request-btn').classList.add('hidden');
+  if (location.hash !== '#admin') {
+    document.getElementById('admin-btn').classList.add('hidden');
+  }
   document.getElementById('page-title').textContent = CONFIG.siteTitle;
   document.title = CONFIG.siteTitle;
   CURRENT = null;
   watermarkReady = false;
-  CLEAN_VIEW = false;
+  clearCleanView();
 
   await loadData();
   const grid = document.getElementById('grid');
@@ -594,6 +609,8 @@ async function showViewer(pid) {
 
   await loadData();
   CURRENT = DB.presentations.find(p => p.id === pid);
+  clearCleanView();
+
   if (!CURRENT) {
     document.getElementById('page-title').textContent = 'Not found';
     document.title = 'Not found';
@@ -605,41 +622,56 @@ async function showViewer(pid) {
   document.getElementById('page-title').textContent = CURRENT.title;
   document.title = CURRENT.title;
 
-  const session = await verifyViewSession(pid, CURRENT);
-  CLEAN_VIEW = !!session;
+  const session = await getViewSession(pid);
 
-  if (CLEAN_VIEW) {
+  if (session) {
+    // We have a voucher-backed session. Clean view is provisional: only after
+    // the PDF decrypts successfully (for locked presentations) does the
+    // capability actually get granted inside renderSlides().
     document.getElementById('watermark-layer').classList.add('hidden');
     document.getElementById('trusted-badge').classList.remove('hidden');
     watermarkReady = false;
 
     try {
       if (CURRENT.locked && !session.view_password) {
-        document.getElementById('lock-screen').classList.remove('hidden');
+        // Session exists but no password — for locked presentations this
+        // can only happen via forgery. Show the lock screen.
+        clearViewSession();
+        document.getElementById('trusted-badge').classList.add('hidden');
+        await enterWatermarkedPath();
       } else {
-        await renderSlides(session.view_password || null, true);
+        await renderSlides(session.view_password || null, /*requestedClean=*/true);
       }
     } catch (e) {
       console.error(e);
+      clearViewSession();
+      clearCleanView();
+      document.getElementById('trusted-badge').classList.add('hidden');
       document.getElementById('render-area').innerHTML =
         `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">❌ ${esc(e.message)}</p>`;
     }
   } else {
-    await buildWatermark();
-    document.getElementById('watermark-layer').classList.remove('hidden');
-    watermarkReady = true;
-    startWatermarkGuard();
+    await enterWatermarkedPath();
+  }
+}
 
-    if (CURRENT.locked) {
-      document.getElementById('lock-screen').classList.remove('hidden');
-    } else {
-      try {
-        await renderSlides(null, false);
-      } catch (e) {
-        console.error(e);
-        document.getElementById('render-area').innerHTML =
-          `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">❌ ${esc(e.message)}</p>`;
-      }
+async function enterWatermarkedPath() {
+  clearCleanView();
+  document.getElementById('trusted-badge').classList.add('hidden');
+  await buildWatermark();
+  document.getElementById('watermark-layer').classList.remove('hidden');
+  watermarkReady = true;
+  startWatermarkGuard();
+
+  if (CURRENT.locked) {
+    document.getElementById('lock-screen').classList.remove('hidden');
+  } else {
+    try {
+      await renderSlides(null, /*requestedClean=*/false);
+    } catch (e) {
+      console.error(e);
+      document.getElementById('render-area').innerHTML =
+        `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">❌ ${esc(e.message)}</p>`;
     }
   }
 }
@@ -742,7 +774,10 @@ function loadScript(src) {
   });
 }
 
-async function renderSlides(password, cleanView) {
+// requestedClean is a *request*, not a proof. Capability is only granted if
+// the PDF actually decrypts successfully with the supplied password. This is
+// what makes session forgery useless for locked presentations.
+async function renderSlides(password, requestedClean) {
   const meta = CURRENT.pdf;
   if (!meta) {
     const area = document.getElementById('render-area');
@@ -765,8 +800,19 @@ async function renderSlides(password, cleanView) {
     try {
       buf = await Crypto.decPw(buf, password, Crypto.b64ToBuf(meta.salt), Crypto.b64ToBuf(meta.iv));
     } catch (e) {
+      // Decryption failure means the session is invalid OR the user entered
+      // the wrong password. Never grant capability in this case.
+      clearCleanView();
       throw new Error('Incorrect password or corrupted file');
     }
+  }
+
+  // Decryption succeeded. If the caller asked for clean view (i.e. a
+  // voucher-backed session was present), grant the capability now.
+  if (requestedClean) {
+    grantCleanView(CURRENT.id);
+  } else {
+    clearCleanView();
   }
 
   document.getElementById('lock-screen').classList.add('hidden');
@@ -774,7 +820,7 @@ async function renderSlides(password, cleanView) {
   area.innerHTML = '<p class="muted" style="text-align:center; margin-top:20px;">Rendering slides, please wait...</p>';
 
   try {
-    await renderPdf(buf, cleanView);
+    await renderPdf(buf);
   } catch (e) {
     area.innerHTML = `<p class="error" style="text-align:center; margin-top:40px; font-size:16px;">
       ❌ Failed to render PDF.<br><br>
@@ -783,7 +829,9 @@ async function renderSlides(password, cleanView) {
   }
 }
 
-async function renderPdf(bytes, cleanView) {
+// No cleanView parameter. Capability is checked *per page* inside the loop,
+// so patching the function signature or passing extra args changes nothing.
+async function renderPdf(bytes) {
   if (!window.pdfjsLib) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
   }
@@ -805,8 +853,6 @@ async function renderPdf(bytes, cleanView) {
   const area = document.getElementById('render-area');
   area.innerHTML = '';
 
-  const wm = cleanView ? null : await getWatermarkData();
-
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const vp = page.getViewport({ scale: 1.3 * scale });
@@ -819,7 +865,12 @@ async function renderPdf(bytes, cleanView) {
 
     const ctx = c.getContext('2d');
     await page.render({ canvasContext: ctx, viewport: vp }).promise;
-    if (!cleanView && wm) drawCanvasWatermark(ctx, c.width, c.height, wm);
+
+    // Per-page capability check. Cannot be bypassed by arguments.
+    if (!isCleanView()) {
+      const wm = await getWatermarkData();
+      drawCanvasWatermark(ctx, c.width, c.height, wm);
+    }
   }
 }
 
@@ -842,12 +893,24 @@ function watermarkIsTampered() {
   if (parseFloat(s.opacity) < 0.05) return true;
   if (s.backgroundImage === 'none') return true;
   if (parseInt(s.zIndex, 10) < 0) return true;
+  if (s.position !== 'fixed') return true;
   if (wm.offsetWidth === 0 || wm.offsetHeight === 0) return true;
+
+  // Strengthened checks:
+  // 1. Must be an SVG data URL (not some other image / empty value)
+  if (!s.backgroundImage.startsWith('url("data:image/svg+xml')) return true;
+  // 2. Must be large enough (empty SVG = a few hundred bytes)
+  if (s.backgroundImage.length < 4000) return true;
+  // 3. Must contain expected markers (url-encoded)
+  const bg = s.backgroundImage;
+  if (!bg.includes('CONFIDENTIAL') &&
+      !bg.includes('DO%20NOT') &&
+      !bg.includes('PROTECTED')) return true;
   return false;
 }
 
 setInterval(() => {
-  if (!viewerActive() || !watermarkReady || CLEAN_VIEW) return;
+  if (!viewerActive() || !watermarkReady || isCleanView()) return;
   if (watermarkIsTampered()) onWatermarkTampered();
 }, 400);
 
@@ -858,12 +921,12 @@ function startWatermarkGuard() {
   const wm = document.getElementById('watermark-layer');
   if (!wm) return;
   new MutationObserver(() => {
-    if (!viewerActive() || !watermarkReady || CLEAN_VIEW) return;
+    if (!viewerActive() || !watermarkReady || isCleanView()) return;
     if (watermarkIsTampered()) onWatermarkTampered();
   }).observe(wm, { attributes: true, attributeFilter: ['style', 'class'] });
 
   new MutationObserver(() => {
-    if (!viewerActive() || !watermarkReady || CLEAN_VIEW) return;
+    if (!viewerActive() || !watermarkReady || isCleanView()) return;
     if (!document.body.contains(wm)) onWatermarkTampered();
   }).observe(document.body, { childList: true });
 }
@@ -892,8 +955,7 @@ document.addEventListener('keydown', e => {
   if (!viewerActive()) return;
   const k = (e.key || '').toLowerCase();
 
-  // In clean view we don't block devtools — user is trusted
-  if (!CLEAN_VIEW) {
+  if (!isCleanView()) {
     if (
         e.key === 'F12' ||
         (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) ||
@@ -934,12 +996,12 @@ document.addEventListener('wheel', e => {
 }, { passive: false });
 
 function applyBlur() {
-    if (CLEAN_VIEW) return;
+    if (isCleanView()) return;
     const area = document.getElementById('render-area');
     if (area) area.style.filter = 'blur(40px)';
 }
 function removeBlur() {
-    if (CLEAN_VIEW) return;
+    if (isCleanView()) return;
     if (document.hasFocus() && !document.hidden) {
         const area = document.getElementById('render-area');
         if (area) area.style.filter = 'none';
@@ -957,7 +1019,7 @@ document.documentElement.addEventListener('mouseenter', removeBlur);
 
 let idleTimer;
 function resetIdleTimer() {
-    if (!viewerActive() || CLEAN_VIEW) return;
+    if (!viewerActive() || isCleanView()) return;
     removeBlur();
     clearTimeout(idleTimer);
     idleTimer = setTimeout(applyBlur, 5000);
@@ -967,12 +1029,12 @@ window.addEventListener('keydown', resetIdleTimer);
 window.addEventListener('scroll', resetIdleTimer);
 
 setInterval(() => {
-    if (viewerActive() && !CLEAN_VIEW && !document.hasFocus()) applyBlur();
+    if (viewerActive() && !isCleanView() && !document.hasFocus()) applyBlur();
 }, 500);
 
 // DevTools size detection (only for watermarked view)
 setInterval(() => {
-  if (!viewerActive() || CLEAN_VIEW) return;
+  if (!viewerActive() || isCleanView()) return;
   const devOpen = (window.outerWidth - window.innerWidth > 160) ||
                   (window.outerHeight - window.innerHeight > 160);
   if (devOpen) applyBlur();
@@ -996,18 +1058,18 @@ window.addEventListener('afterprint', () => {
 // Canvas exfil protection (watermarked view only)
 const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
 HTMLCanvasElement.prototype.toDataURL = function() {
-    if (viewerActive() && !CLEAN_VIEW) return '';
+    if (viewerActive() && !isCleanView()) return '';
     return originalToDataURL.apply(this, arguments);
 };
 const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
 CanvasRenderingContext2D.prototype.getImageData = function() {
-    if (viewerActive() && !CLEAN_VIEW) return new ImageData(1, 1);
+    if (viewerActive() && !isCleanView()) return new ImageData(1, 1);
     return originalGetImageData.apply(this, arguments);
 };
 
 // debugger trick (watermarked view only)
 setInterval(() => {
-    if (viewerActive() && !CLEAN_VIEW) {
+    if (viewerActive() && !isCleanView()) {
         const start = performance.now();
         debugger;
         const end = performance.now();
@@ -1023,7 +1085,8 @@ document.getElementById('pw-submit').onclick = async () => {
   const btn = document.getElementById('pw-submit');
   btn.disabled = true; btn.textContent = 'Checking...';
   try {
-    await renderSlides(document.getElementById('pw-input').value, CLEAN_VIEW);
+    // User-entered passwords never grant clean view — always requestedClean=false.
+    await renderSlides(document.getElementById('pw-input').value, false);
   } catch (e) {
     document.getElementById('pw-error').textContent =
       e.message === 'Incorrect password or corrupted file' ? 'Incorrect password' : 'Error: ' + e.message;
@@ -1037,6 +1100,7 @@ document.getElementById('pw-input').onkeydown = e => { if (e.key === 'Enter') do
 const modal = document.getElementById('modal');
 document.getElementById('req-cancel').onclick = () => modal.classList.add('hidden');
 document.getElementById('req-send').onclick = async () => {
+  if (!CURRENT) { modal.classList.add('hidden'); return; }
   const contact = document.getElementById('req-contact').value.trim();
   const reason = document.getElementById('req-reason').value.trim();
   const status = document.getElementById('req-status');
@@ -1098,16 +1162,6 @@ document.getElementById('voucher-go').onclick = async () => {
 
     if (result.type === 'view') {
       const p = result.payload;
-      if (!CURRENT.view_check) {
-        status.textContent = 'This presentation does not support view vouchers.';
-        status.className = 'error';
-        return;
-      }
-      if (p.verify_token !== CURRENT.view_check) {
-        status.textContent = 'Voucher signature mismatch.';
-        status.className = 'error';
-        return;
-      }
       if (p.expires_at && new Date(p.expires_at) < new Date()) {
         status.textContent = 'Voucher expired.';
         status.className = 'error';
@@ -1115,14 +1169,17 @@ document.getElementById('voucher-go').onclick = async () => {
       }
 
       await storeViewSession(CURRENT.id, p);
-      CLEAN_VIEW = true;
       document.getElementById('trusted-badge').classList.remove('hidden');
       document.getElementById('watermark-layer').classList.add('hidden');
       watermarkReady = false;
 
       try {
-        await renderSlides(p.view_password || null, true);
+        // renderSlides will only actually grant the capability if decryption
+        // succeeds; otherwise it throws.
+        await renderSlides(p.view_password || null, /*requestedClean=*/true);
       } catch (e) {
+        clearViewSession();
+        clearCleanView();
         status.textContent = 'Unlocked, but failed to render: ' + e.message;
         status.className = 'error';
         return;
@@ -1180,7 +1237,7 @@ async function showAdmin() {
   document.getElementById('page-title').textContent = 'Admin';
   document.title = 'Admin';
   watermarkReady = false;
-  CLEAN_VIEW = false;
+  clearCleanView();
 
   const token = localStorage.getItem('gh_token');
   if (token) {
@@ -1554,7 +1611,6 @@ document.getElementById('upload-btn').onclick = async () => {
     const presSalt = crypto.getRandomValues(new Uint8Array(16));
     const kek = await Crypto.deriveRaw(master, presSalt);
     const kekCheck = await Crypto.sha256Hex(hex(kek));
-    const viewCheck = await computeViewCheck(kek);
 
     logLine('[*] Encrypting source file…');
     const srcIv = crypto.getRandomValues(new Uint8Array(12));
@@ -1574,6 +1630,7 @@ document.getElementById('upload-btn').onclick = async () => {
         entries.push({ path: `${dir}/slides.pdf.enc`, data: await Crypto.encPw(previewBytes, viewPw, s, iv) });
         pdfMeta = { file: `${dir}/slides.pdf.enc`, encrypted: true, salt: Crypto.bufToB64(s), iv: Crypto.bufToB64(iv) };
       } else {
+        // NOTE: unencrypted — the PDF is world-readable on GitHub.
         entries.push({ path: `${dir}/slides.pdf`, data: previewBytes });
         pdfMeta = { file: `${dir}/slides.pdf`, encrypted: false };
       }
@@ -1610,8 +1667,9 @@ document.getElementById('upload-btn').onclick = async () => {
       const vs = crypto.getRandomValues(new Uint8Array(16));
       const vi = crypto.getRandomValues(new Uint8Array(12));
       const vKey = await Crypto.deriveRaw(code, vs);
+      // No view_check/verify_token anymore — the session is validated by
+      // actual PDF decryption on use.
       const payload = JSON.stringify({
-        verify_token: viewCheck,
         view_password: viewPw || null,
         expires_at: expiresAt,
       });
@@ -1637,7 +1695,6 @@ document.getElementById('upload-btn').onclick = async () => {
       locked: !!viewPw && !!pdfMeta,
       pdf: pdfMeta,
       kek_check: kekCheck,
-      view_check: viewCheck,
       source: {
         file: `${dir}/source.${sourceExt}.enc`,
         salt: Crypto.bufToB64(presSalt),
@@ -1731,24 +1788,15 @@ document.getElementById('voucher-issue').onclick = async () => {
 
     let voucher;
     if (type === 'view') {
-      if (!pres.view_check) {
-        // legacy presentation: compute view_check from kek and store it
-        pres.view_check = await computeViewCheck(kek);
-        logLine('[*] Computed view_check for legacy presentation');
-      }
       const expiresAt = days > 0
         ? new Date(Date.now() + days * 24 * 3600 * 1000).toISOString()
         : null;
-      // Try to recover view password if presentation is locked
       let viewPassword = null;
       if (pres.locked && pres.pdf && pres.pdf.encrypted) {
-        // Admin needs to enter view password here — we can't recover it.
-        // Ask the admin
         viewPassword = prompt('This presentation is password-protected. Enter the VIEW password to embed in the voucher (so trusted user can see clean PDF):');
         if (!viewPassword) throw new Error('View password required for locked presentation');
       }
       const payload = JSON.stringify({
-        verify_token: pres.view_check,
         view_password: viewPassword,
         expires_at: expiresAt,
       });
